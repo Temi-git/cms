@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Controlled Banner Management System</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+        color: #0f172a;
+      }
+      .card {
+        width: min(92vw, 560px);
+        padding: 2.25rem;
+        border-radius: 24px;
+        background: rgba(255,255,255,0.94);
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        text-align: center;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        margin: 0 0 0.6rem;
+        font-size: 1.8rem;
+      }
+      p {
+        margin: 0 0 1.2rem;
+        color: #475569;
+        line-height: 1.6;
+      }
+      a {
+        display: inline-block;
+        text-decoration: none;
+        padding: 0.8rem 1.15rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+      }
+      a:hover {
+        transform: translateY(-1px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="badge">CB</div>
+      <h1>Controlled Banner Management System</h1>
+      <p>Manage your banner campaigns with a polished control panel designed for efficiency and clarity.</p>
+      <a href="/admin/">Go to Admin Dashboard</a>
+    </div>
+  </body>
+</html>

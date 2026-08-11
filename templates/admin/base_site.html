@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+    <div id="branding">
+        <a href="{% url 'admin:index' %}" class="admin-brand-link">
+            <span class="brand-badge">CB</span>
+            <span class="brand-text">
+                <strong>Controlled Banner Management System</strong>
+                <small>Admin Portal</small>
+            </span>
+        </a>
+    </div>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}

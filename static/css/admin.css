@@ -1,0 +1,139 @@
+body {
+    background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
+    color: #0f172a;
+}
+
+#container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+#header {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+    border-bottom: none;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+    padding: 0.75rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#branding {
+    padding: 0.35rem 0;
+}
+
+#branding a,
+.admin-brand-link {
+    color: #f8fafc;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-text strong {
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.brand-text small {
+    margin-top: 0.15rem;
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+#user-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#user-tools a {
+    color: #e2e8f0;
+}
+
+#user-tools a:hover {
+    color: #ffffff;
+}
+
+#content {
+    padding: 1rem 0 2rem;
+}
+
+div.breadcrumbs {
+    background: #ffffff;
+    color: #334155;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    margin-bottom: 1rem;
+}
+
+.module {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+
+.module h2, .module caption, .inline-group h2 {
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    color: #1e3a8a;
+    border-bottom: 1px solid #dbeafe;
+    padding: 0.8rem 1rem;
+}
+
+.button, input[type=submit], .submit-row input {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none;
+    border-radius: 999px;
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+}
+
+.button:hover, input[type=submit]:hover, .submit-row input:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+textarea, input[type=text], input[type=password], input[type=email], select, .vTextField {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+}
+
+textarea:focus, input[type=text]:focus, input[type=password]:focus, input[type=email]:focus, select:focus, .vTextField:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.errornote, .alert {
+    border-radius: 12px;
+}
+
+body.login #container {
+    max-width: 480px;
+    margin: 2rem auto;
+}
+
+body.login #content {
+    padding: 1rem 0;
+}
