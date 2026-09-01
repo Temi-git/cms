@@ -1,0 +1,926 @@
+/* =============================================================
+   Promallshop — Banner Control Management
+   Custom Admin Theme
+   Target: Django 4.x / 5.x default admin markup
+   ============================================================= */
+
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bcm-navy:        #0f172a;   /* header / sidebar bg           */
+  --bcm-navy-mid:    #1e293b;   /* module headers, hover rows    */
+  --bcm-navy-soft:   #334155;   /* secondary surfaces            */
+  --bcm-accent:      #38bdf8;   /* sky-blue accent               */
+  --bcm-accent-dark: #0ea5e9;   /* accent hover                  */
+  --bcm-accent-dim:  #0369a1;   /* accent pressed / active       */
+  --bcm-surface:     #ffffff;   /* card / table surface          */
+  --bcm-bg:          #f1f5f9;   /* page background               */
+  --bcm-border:      #e2e8f0;   /* card / row borders            */
+  --bcm-text:        #0f172a;   /* primary text                  */
+  --bcm-text-mid:    #475569;   /* secondary text                */
+  --bcm-text-soft:   #94a3b8;   /* muted / timestamps            */
+  --bcm-success:     #10b981;
+  --bcm-danger:      #ef4444;
+  --bcm-warning:     #f59e0b;
+  --bcm-radius:      10px;
+  --bcm-radius-sm:   6px;
+  --bcm-shadow:      0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.05);
+  --bcm-shadow-lg:   0 4px 24px rgba(0,0,0,.12);
+  --bcm-transition:  0.18s ease;
+  --bcm-font:        'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── Base reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  font-family: var(--bcm-font);
+  background: var(--bcm-bg);
+  color: var(--bcm-text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--bcm-accent-dark); text-decoration: none; transition: color var(--bcm-transition); }
+a:hover { color: var(--bcm-accent-dim); }
+
+/* ── Header / navbar ────────────────────────────────────────── */
+#header {
+  background: var(--bcm-navy) !important;
+  color: #f8fafc !important;
+  padding: 0 28px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Brand area */
+.bcm-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #f8fafc !important;
+  text-decoration: none;
+}
+
+.bcm-brand__icon {
+  font-size: 26px;
+  color: var(--bcm-accent);
+  line-height: 1;
+}
+
+.bcm-brand__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.bcm-brand__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: .01em;
+}
+
+.bcm-brand__sub {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--bcm-accent);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+/* Nav links (user tools) */
+#user-tools {
+  font-size: 13px;
+  color: #cbd5e1 !important;
+}
+
+#user-tools a {
+  color: #cbd5e1 !important;
+  padding: 5px 10px;
+  border-radius: var(--bcm-radius-sm);
+  transition: background var(--bcm-transition), color var(--bcm-transition);
+}
+
+#user-tools a:hover {
+  background: rgba(255,255,255,.08);
+  color: #f8fafc !important;
+}
+
+#user-tools strong { color: var(--bcm-accent) !important; font-weight: 600; }
+
+/* Breadcrumbs */
+div.breadcrumbs {
+  background: var(--bcm-navy-mid) !important;
+  color: #94a3b8 !important;
+  padding: 10px 28px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+div.breadcrumbs a {
+  color: var(--bcm-accent) !important;
+}
+
+div.breadcrumbs a:hover {
+  color: #f8fafc !important;
+}
+
+/* ── Page wrapper ───────────────────────────────────────────── */
+#container { background: var(--bcm-bg); }
+
+#content-main {
+  padding: 24px 0;
+}
+
+/* ── App index — card groups ────────────────────────────────── */
+#content-main .app-banners,
+#content-main .app-auth,
+#content-main .app-authtoken,
+.app-list .app-banners,
+.app-list .app-auth,
+.app-list .app-authtoken {
+  /* targeting via module wrapper below */
+}
+
+/* Each app section (the <div class="app-*"> blocks on index) */
+#content-main > div[class^="app-"],
+#content-main > div[class*=" app-"] {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+/* App section caption / heading */
+#content-main > div[class^="app-"] caption,
+#content-main > div[class*=" app-"] caption,
+.app-index caption {
+  background: var(--bcm-navy-mid);
+  color: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 10px 16px;
+  text-align: left;
+}
+
+#content-main > div[class^="app-"] caption a,
+#content-main > div[class*=" app-"] caption a {
+  color: var(--bcm-accent) !important;
+}
+
+/* ── Module / fieldset headers ──────────────────────────────── */
+.module h2, .module caption,
+fieldset.module h2 {
+  background: var(--bcm-navy-mid) !important;
+  color: #f1f5f9 !important;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  padding: 10px 16px;
+  border-radius: 0;
+}
+
+.module {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+/* ── Data tables ────────────────────────────────────────────── */
+#result_list {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bcm-surface);
+  border-radius: 0 0 var(--bcm-radius) var(--bcm-radius);
+  overflow: hidden;
+}
+
+#result_list thead th {
+  background: var(--bcm-navy-mid);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--bcm-navy);
+  white-space: nowrap;
+}
+
+#result_list thead th a {
+  color: #e2e8f0 !important;
+}
+
+#result_list thead th a:hover {
+  color: var(--bcm-accent) !important;
+}
+
+#result_list thead th.sorted {
+  background: var(--bcm-navy);
+}
+
+#result_list thead th.sorted .text {
+  color: var(--bcm-accent) !important;
+}
+
+#result_list tbody tr {
+  border-bottom: 1px solid var(--bcm-border);
+  transition: background var(--bcm-transition);
+}
+
+#result_list tbody tr:last-child {
+  border-bottom: none;
+}
+
+#result_list tbody tr:hover {
+  background: #f8fafc;
+}
+
+#result_list tbody td, #result_list tbody th {
+  padding: 11px 16px;
+  font-size: 13.5px;
+  color: var(--bcm-text);
+  vertical-align: middle;
+}
+
+#result_list tbody td.action-checkbox {
+  padding: 11px 12px;
+}
+
+/* Row striping — very subtle */
+#result_list tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+#result_list tbody tr:nth-child(even):hover {
+  background: #f1f5f9;
+}
+
+/* ── Change-list toolbar ────────────────────────────────────── */
+#changelist-filter {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  padding: 0;
+  overflow: hidden;
+}
+
+#changelist-filter h2 {
+  background: var(--bcm-navy-mid) !important;
+  color: #f1f5f9 !important;
+  font-size: 11px !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  padding: 10px 16px;
+  margin: 0;
+}
+
+#changelist-filter h3 {
+  color: var(--bcm-text-mid);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: 12px 16px 4px;
+  margin: 0;
+  border-top: 1px solid var(--bcm-border);
+}
+
+#changelist-filter ul {
+  padding: 4px 0 12px;
+  margin: 0;
+  list-style: none;
+}
+
+#changelist-filter ul li {
+  padding: 2px 16px;
+}
+
+#changelist-filter ul li a {
+  color: var(--bcm-text-mid);
+  font-size: 13px;
+  display: block;
+  padding: 4px 0;
+  border-radius: var(--bcm-radius-sm);
+  transition: color var(--bcm-transition);
+}
+
+#changelist-filter ul li a:hover {
+  color: var(--bcm-accent-dark);
+}
+
+#changelist-filter ul li.selected a {
+  color: var(--bcm-accent-dim);
+  font-weight: 600;
+}
+
+/* Search bar */
+#toolbar {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#searchbar {
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius-sm);
+  padding: 7px 12px;
+  font-family: var(--bcm-font);
+  font-size: 13px;
+  color: var(--bcm-text);
+  background: #f8fafc;
+  transition: border-color var(--bcm-transition), box-shadow var(--bcm-transition);
+  width: 280px;
+}
+
+#searchbar:focus {
+  outline: none;
+  border-color: var(--bcm-accent-dark);
+  box-shadow: 0 0 0 3px rgba(56,189,248,.15);
+  background: #fff;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+/* Base */
+.button, input[type=submit], input[type=button],
+.submit-row input, a.button,
+.addlink, .changelink, .deletelink {
+  font-family: var(--bcm-font) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border-radius: 20px !important;
+  padding: 7px 18px !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background var(--bcm-transition), box-shadow var(--bcm-transition), transform var(--bcm-transition) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+}
+
+/* Primary (save, add) */
+.button.default, input[type=submit].default,
+.submit-row input[type=submit],
+input[name=_save], input[name=_addanother], input[name=_continue] {
+  background: var(--bcm-accent-dark) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(14,165,233,.30) !important;
+}
+
+.button.default:hover, input[type=submit].default:hover,
+.submit-row input[type=submit]:hover,
+input[name=_save]:hover, input[name=_addanother]:hover, input[name=_continue]:hover {
+  background: var(--bcm-accent-dim) !important;
+  box-shadow: 0 4px 14px rgba(14,165,233,.40) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Secondary */
+.button:not(.default):not(.deletelink),
+input[type=submit]:not(.default):not([name=_delete]) {
+  background: var(--bcm-navy-mid) !important;
+  color: #e2e8f0 !important;
+}
+
+.button:not(.default):not(.deletelink):hover {
+  background: var(--bcm-navy-soft) !important;
+  color: #f8fafc !important;
+}
+
+/* Add links (green → accent) */
+.addlink {
+  background: var(--bcm-accent-dark) !important;
+  color: #fff !important;
+  padding: 5px 14px !important;
+  border-radius: 16px !important;
+  font-size: 12px !important;
+}
+
+.addlink:hover {
+  background: var(--bcm-accent-dim) !important;
+  color: #fff !important;
+}
+
+/* Delete */
+.deletelink, a.deletelink {
+  background: var(--bcm-danger) !important;
+  color: #fff !important;
+}
+
+.deletelink:hover, a.deletelink:hover {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* Object tool links */
+ul.object-tools li a {
+  background: var(--bcm-accent-dark);
+  color: #fff !important;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background var(--bcm-transition), transform var(--bcm-transition);
+}
+
+ul.object-tools li a:hover {
+  background: var(--bcm-accent-dim);
+  transform: translateY(-1px);
+}
+
+ul.object-tools {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Submit row ─────────────────────────────────────────────── */
+.submit-row {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-top: 2px solid var(--bcm-border);
+  border-radius: 0 0 var(--bcm-radius) var(--bcm-radius);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.submit-row p.deletelink-box {
+  margin: 0;
+}
+
+/* ── Fieldsets / form sections ──────────────────────────────── */
+fieldset {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  margin-bottom: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+fieldset h2 {
+  background: var(--bcm-navy-mid) !important;
+  color: #f1f5f9 !important;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  padding: 10px 16px;
+  margin: 0;
+}
+
+fieldset .form-row {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bcm-border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+fieldset .form-row:last-child {
+  border-bottom: none;
+}
+
+/* Form labels */
+label, .required, .label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bcm-text-mid);
+}
+
+/* Form inputs */
+input[type=text], input[type=email], input[type=url],
+input[type=password], input[type=number], input[type=date],
+input[type=datetime-local], textarea, select {
+  font-family: var(--bcm-font);
+  font-size: 13px;
+  color: var(--bcm-text);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius-sm);
+  padding: 7px 10px;
+  background: #f8fafc;
+  transition: border-color var(--bcm-transition), box-shadow var(--bcm-transition);
+  width: 100%;
+}
+
+input[type=text]:focus, input[type=email]:focus, input[type=url]:focus,
+input[type=password]:focus, input[type=number]:focus,
+textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--bcm-accent-dark);
+  box-shadow: 0 0 0 3px rgba(56,189,248,.15);
+  background: #fff;
+}
+
+/* Help text */
+.help, p.help, .help-block {
+  color: var(--bcm-text-soft);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ── Content header / page title ────────────────────────────── */
+#content h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--bcm-text);
+  margin: 0 0 20px;
+  line-height: 1.3;
+}
+
+/* ── Recent actions sidebar ─────────────────────────────────── */
+#recent-actions-module {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  overflow: hidden;
+}
+
+#recent-actions-module h2 {
+  background: var(--bcm-navy-mid) !important;
+  color: #f1f5f9 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .09em;
+  padding: 10px 16px;
+  margin: 0;
+}
+
+#recent-actions-module h3 {
+  color: var(--bcm-text-soft);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 10px 16px 4px;
+  margin: 0;
+  border-top: 1px solid var(--bcm-border);
+}
+
+#recent-actions-module ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#recent-actions-module ul li {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--bcm-border);
+  font-size: 12.5px;
+  transition: background var(--bcm-transition);
+}
+
+#recent-actions-module ul li:last-child {
+  border-bottom: none;
+}
+
+#recent-actions-module ul li:hover {
+  background: #f8fafc;
+}
+
+#recent-actions-module .actionlist .addlink,
+#recent-actions-module .actionlist .changelink,
+#recent-actions-module .actionlist .deletelink {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+/* Action icons (add = green dot, change = blue, delete = red) */
+#recent-actions-module .addlink { color: var(--bcm-success) !important; }
+#recent-actions-module .changelink { color: var(--bcm-accent-dark) !important; }
+#recent-actions-module .deletelink { color: var(--bcm-danger) !important; }
+
+.mini.quiet {
+  color: var(--bcm-text-soft);
+  font-size: 11px;
+  display: block;
+  margin-top: 2px;
+}
+
+/* ── Messages / alerts ──────────────────────────────────────── */
+ul.messagelist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+ul.messagelist li {
+  padding: 12px 18px 12px 46px;
+  margin-bottom: 8px;
+  border-radius: var(--bcm-radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  position: relative;
+  background-size: 20px;
+  background-repeat: no-repeat;
+  background-position: 16px center;
+}
+
+ul.messagelist li.success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+ul.messagelist li.warning {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+ul.messagelist li.error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.paginator {
+  padding: 14px 0;
+  font-size: 13px;
+  color: var(--bcm-text-mid);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.paginator a, .paginator span.this-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--bcm-radius-sm);
+  font-size: 13px;
+  border: 1px solid var(--bcm-border);
+  transition: background var(--bcm-transition), color var(--bcm-transition), border-color var(--bcm-transition);
+}
+
+.paginator a {
+  color: var(--bcm-text-mid);
+  background: var(--bcm-surface);
+}
+
+.paginator a:hover {
+  background: var(--bcm-navy-mid);
+  color: #f8fafc;
+  border-color: var(--bcm-navy-mid);
+}
+
+.paginator span.this-page {
+  background: var(--bcm-accent-dark);
+  color: #fff;
+  border-color: var(--bcm-accent-dark);
+  font-weight: 600;
+}
+
+/* ── Inline admin ───────────────────────────────────────────── */
+.inline-group {
+  background: var(--bcm-surface);
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.inline-group h2 {
+  background: var(--bcm-navy-soft) !important;
+  color: #f1f5f9 !important;
+  font-size: 11px !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  padding: 10px 16px;
+  margin: 0;
+}
+
+.inline-related h3.inline_label {
+  background: #f1f5f9;
+  color: var(--bcm-text-mid);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 16px;
+  margin: 0;
+  border-top: 1px solid var(--bcm-border);
+  border-bottom: 1px solid var(--bcm-border);
+}
+
+/* ── Checkbox / select-all ──────────────────────────────────── */
+input[type=checkbox] {
+  accent-color: var(--bcm-accent-dark);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* ── Actions bar ────────────────────────────────────────────── */
+.actions {
+  background: #f8fafc;
+  border: 1px solid var(--bcm-border);
+  border-radius: var(--bcm-radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actions label {
+  font-size: 12.5px;
+  color: var(--bcm-text-mid);
+  font-weight: 500;
+}
+
+.actions select {
+  width: auto;
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+
+/* ── Content area layout ────────────────────────────────────── */
+#content {
+  padding: 24px 32px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+#content-related {
+  padding-top: 0;
+}
+
+/* ── Login page ─────────────────────────────────────────────── */
+body.login {
+  background: var(--bcm-navy);
+}
+
+body.login #container {
+  background: transparent;
+}
+
+body.login #header {
+  display: none;
+}
+
+#login-form {
+  background: var(--bcm-surface);
+  border-radius: var(--bcm-radius);
+  box-shadow: var(--bcm-shadow-lg);
+  padding: 36px 40px;
+  max-width: 400px;
+  margin: 80px auto 0;
+}
+
+body.login #content h1 {
+  color: #f8fafc;
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+body.login .form-row {
+  border: none;
+  padding: 8px 0;
+}
+
+body.login .submit-row {
+  background: transparent;
+  border: none;
+  padding: 8px 0 0;
+  justify-content: center;
+}
+
+body.login .submit-row input[type=submit] {
+  width: 100%;
+  justify-content: center;
+  border-radius: var(--bcm-radius-sm) !important;
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+}
+
+/* ── Dashboard two-column layout enhancement ────────────────── */
+#content-main {
+  padding: 0;
+}
+
+/* ── Scrollbar styling (webkit) ─────────────────────────────── */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--bcm-bg); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Thumbnail previews (from BannerAdmin etc.) ─────────────── */
+img[style*="max-height:50px"] {
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.12);
+  transition: transform var(--bcm-transition), box-shadow var(--bcm-transition);
+}
+
+img[style*="max-height:50px"]:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+}
+
+/* ── Dark-mode overrides (respects Django's own dark theme toggle) ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bcm-surface:   #1e293b;
+    --bcm-bg:        #0f172a;
+    --bcm-border:    #334155;
+    --bcm-text:      #f1f5f9;
+    --bcm-text-mid:  #94a3b8;
+    --bcm-text-soft: #64748b;
+  }
+
+  #result_list tbody tr:hover { background: #273549; }
+  #result_list tbody tr:nth-child(even) { background: #1a2a3a; }
+  #result_list tbody tr:nth-child(even):hover { background: #243040; }
+  #searchbar, input[type=text], input[type=email],
+  input[type=url], input[type=password], textarea, select {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-color: #334155;
+  }
+  #searchbar:focus, input[type=text]:focus, textarea:focus, select:focus {
+    background: #1e293b;
+  }
+  #toolbar, .actions { background: #1e293b; }
+  #recent-actions-module ul li:hover { background: #273549; }
+  ul.messagelist li.success { background-color: #064e3b; color: #a7f3d0; border-color: #065f46; }
+  ul.messagelist li.warning { background-color: #451a03; color: #fde68a; border-color: #92400e; }
+  ul.messagelist li.error   { background-color: #450a0a; color: #fecaca; border-color: #991b1b; }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  #header {
+    height: auto;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: relative;
+  }
+
+  #content { padding: 16px; }
+
+  .bcm-brand__sub { display: none; }
+
+  #searchbar { width: 100%; }
+
+  #result_list thead th,
+  #result_list tbody td,
+  #result_list tbody th {
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+
+  ul.object-tools { justify-content: flex-start; }
+
+  .submit-row { flex-direction: column; align-items: stretch; }
+  .submit-row input { text-align: center; justify-content: center; }
+
+  #login-form { margin: 40px 16px 0; padding: 28px 20px; }
+}
+
+@media (max-width: 480px) {
+  #result_list { font-size: 12px; }
+  #content h1 { font-size: 18px; }
+}
