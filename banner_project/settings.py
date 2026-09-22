@@ -117,5 +117,5 @@ CORS_ALLOW_CREDENTIALS = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-API_TOKEN = "aab9c41aaae1c753d1f86d675c3208dee172efda"
+API_TOKEN = "5540c3dfb5ea6df1d5dc165351e12525596ed7ea"
 API_BASE = "http://127.0.0.1:8001"

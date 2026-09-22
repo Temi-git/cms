@@ -1,6 +1,19 @@
+"""
+banners/api_helpers.py
+
+Pure helper utilities: media URL builder, queryset filters,
+and the homepage payload builder.
+
+All serializer functions have been moved to banners/serializers.py.
+"""
+
 from django.db.models import Q
 from django.utils import timezone
 
+
+# ============================================================
+# MEDIA URL HELPER
+# ============================================================
 
 def build_media_url(request, file_field):
     if not file_field:
@@ -10,6 +23,10 @@ def build_media_url(request, file_field):
     except Exception:
         return ''
 
+
+# ============================================================
+# QUERYSET FILTERS
+# ============================================================
 
 def filter_publishable(queryset):
     now = timezone.now()
@@ -30,99 +47,33 @@ def filter_scheduled(queryset):
     )
 
 
-def serialize_banner(request, banner):
-    return {
-        'id': banner.id,
-        'title': banner.title or '',
-        'text': banner.text or '',
-        'link': banner.link or '',
-        'image': build_media_url(request, banner.image),
-        'display_order': banner.display_order,
-    }
-
-
-def serialize_event(request, event):
-    return {
-        'id': event.id,
-        'name': event.name or '',
-        'description': event.description or '',
-        'event_date': (
-            event.event_date.strftime('%B %d, %Y')
-            if event.event_date
-            else ''
-        ),
-        'event_datetime': (
-            event.event_date.isoformat()
-            if event.event_date
-            else ''
-        ),
-        'image': build_media_url(request, event.image),
-        'registration_link': event.registration_link or '',
-    }
-
-
-def serialize_gif(request, gif):
-    return {
-        'id': gif.id,
-        'title': gif.title or '',
-        'description': gif.description or '',
-        'media_file': build_media_url(request, gif.media_file),
-        'link': gif.link or '',
-        'display_order': gif.display_order,
-    }
-
-
-
-def serialize_flash_sale(request, flash_sale):
-    return {
-        'id': flash_sale.id,
-        'title': flash_sale.title or '',
-        'description': flash_sale.description or '',
-        'image': build_media_url(request, flash_sale.image),
-        'start_datetime': flash_sale.start_datetime.isoformat(),
-        'end_datetime': flash_sale.end_datetime.isoformat(),
-        'is_live': flash_sale.is_currently_visible(),
-        'seconds_remaining': flash_sale.seconds_remaining,
-        'display_order': flash_sale.display_order,
-    }
-
-
-
-def serialize_today_deal(request, deal):
-    return {
-        'id': deal.id,
-        'title': deal.title or '',
-        'subtitle': deal.subtitle or '',
-        'image': build_media_url(request, deal.image),
-        'product_id': deal.product.id if deal.product else None,
-        'start_datetime': deal.start_datetime.isoformat(),
-        'end_datetime': deal.end_datetime.isoformat(),
-        'is_live': deal.is_currently_visible(),
-        'seconds_remaining': deal.seconds_remaining,
-        'display_order': deal.display_order,
-    }
-
-
-def serialize_affiliate_banner(request, banner):
-    return {
-        'id': banner.id,
-        'title': banner.title or '',
-        'image': build_media_url(request, banner.image),
-        'affiliate_url': banner.affiliate_url or '',
-        'display_order': banner.display_order,
-    }
-
+# ============================================================
+# HOMEPAGE PAYLOAD BUILDER
+# ============================================================
 
 def build_homepage_payload(request, entity):
+    """
+    Builds the core homepage payload dict for an entity.
+    Used by views that need the combined homepage data.
+    """
+    from .serializers import (
+        serialize_banner,
+        serialize_gif,
+        serialize_flash_sale,
+        serialize_today_deal,
+        serialize_affiliate_banner,
+        serialize_event,
+    )
+    from .models import Banner
+
     banners = filter_publishable(
-        entity.banners.all()
+        Banner.objects.filter(entities=entity)
     ).order_by('display_order', '-created_at')
 
     gifs = filter_publishable(
         entity.gifs.all()
     ).order_by('display_order', '-created_at')
 
-   
     flash_sales = filter_scheduled(
         entity.flash_sales.all()
     ).order_by('display_order', '-created_at')
@@ -134,27 +85,23 @@ def build_homepage_payload(request, entity):
     affiliate_banners = filter_publishable(
         entity.affiliate_banners.all()
     ).order_by('display_order', '-created_at')
+
     events = filter_publishable(
         entity.events.all()
     ).order_by('event_date')
-
-   
 
     return {
         'banners': [serialize_banner(request, item) for item in banners],
         'gifs': [serialize_gif(request, item) for item in gifs],
         'flash_sales': [
-            serialize_flash_sale(request, item)
-            for item in flash_sales
+            serialize_flash_sale(request, item) for item in flash_sales
         ],
         'today_deals': [
-            serialize_today_deal(request, item)
-            for item in today_deals
+            serialize_today_deal(request, item) for item in today_deals
         ],
         'affiliate_banners': [
             serialize_affiliate_banner(request, item)
             for item in affiliate_banners
         ],
         'events': [serialize_event(request, item) for item in events],
-        
     }

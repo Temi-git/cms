@@ -22,9 +22,42 @@ from .models import (
     UpcomingEvent,
     HomepageGif,
     FlashSale,
-    AffiliateBanner, 
+    AffiliateBanner,
     TodayDeal,
     Product,
+    ThingWeDo,
+    CybersecuritySolution,
+    Project,
+    BlogPost,
+    Recognition,
+    TeamCertificate,
+    CaseStudy,
+    CaseStudyImage,
+    CaseStudyTechnology,
+    CaseStudyResultROI,
+    EventMedia,
+    TechnologyPartner,
+)
+
+from .serializers import (
+    serialize_banner,
+    serialize_gif,
+    serialize_affiliate_banner,
+    serialize_event,
+    serialize_event_detail,
+    serialize_flash_sale,
+    serialize_today_deal,
+    serialize_thing_we_do,
+    serialize_cybersecurity_solution,
+    serialize_project,
+    serialize_blog_post,
+    serialize_recognition,
+    serialize_team_certificate,
+    serialize_case_study_image,
+    serialize_case_study_list,
+    serialize_case_study_detail,
+    serialize_technology_partner,
+    _slugify_value,
 )
 
 
@@ -119,99 +152,6 @@ def filter_scheduled(queryset):
         start_datetime__lte=now,
         end_datetime__gte=now,
     )
-
-
-# ============================================================
-# SERIALIZERS
-# ============================================================
-
-def serialize_banner(request, banner):
-    return {
-        "id": banner.id,
-        "title": banner.title or "",
-        "text": banner.text or "",
-        "link": banner.link or "",
-        "image": build_media_url(request, banner.image),
-        "display_order": banner.display_order,
-    }
-
-
-def serialize_gif(request, gif):
-    return {
-        "id": gif.id,
-        "title": gif.title or "",
-        "description": gif.description or "",
-        "media_file": build_media_url(
-            request,
-            gif.media_file,
-        ),
-        "link": gif.link or "",
-        "display_order": gif.display_order,
-    }
-
-
-
-def serialize_flash_sale(request, flash_sale):
-    return {
-        "id": flash_sale.id,
-        "title": flash_sale.title or "",
-        "description": flash_sale.description or "",
-        "image": build_media_url(
-            request,
-            flash_sale.image,
-        ),
-        "start_datetime": (
-            flash_sale.start_datetime.isoformat()
-            if flash_sale.start_datetime
-            else ""
-        ),
-        "end_datetime": (
-            flash_sale.end_datetime.isoformat()
-            if flash_sale.end_datetime
-            else ""
-        ),
-        "is_live": flash_sale.is_currently_visible(),
-        "seconds_remaining": flash_sale.seconds_remaining,
-        "display_order": flash_sale.display_order,
-    }
-
-
-
-def serialize_affiliate_banner(request, banner):
-    return {
-        "id": banner.id,
-        "title": banner.title or "",
-        "image": build_media_url(
-            request,
-            banner.image,
-        ),
-        "affiliate_url": banner.affiliate_url or "",
-        "display_order": banner.display_order,
-    }
-
-
-def serialize_event(request, event):
-    return {
-        "id": event.id,
-        "name": event.name or "",
-        "description": event.description or "",
-        "event_date": (
-            event.event_date.strftime("%B %d, %Y")
-            if event.event_date
-            else ""
-        ),
-        "event_datetime": (
-            event.event_date.isoformat()
-            if event.event_date
-            else ""
-        ),
-        "image": build_media_url(
-            request,
-            event.image,
-        ),
-        "registration_link": event.registration_link or "",
-    }
-
 
 
 # ============================================================
@@ -450,7 +390,7 @@ def get_banner_api(request, slug):
         )
 
     banners = filter_publishable(
-        entity.banners.all()
+        Banner.objects.filter(entities=entity)
     ).order_by(
         "display_order",
         "-created_at",
@@ -627,7 +567,7 @@ def get_combined_api(request, slug):
     # --------------------------------------------------------
 
     banners = filter_publishable(
-        entity.banners.all()
+        Banner.objects.filter(entities=entity)
     ).order_by(
         "display_order",
         "-created_at",
@@ -779,6 +719,71 @@ def get_combined_api(request, slug):
         })
 
     # --------------------------------------------------------
+    # THINGS WE DO
+    # --------------------------------------------------------
+
+    things_we_do = filter_publishable(
+        entity.things_we_do.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # CYBERSECURITY SOLUTIONS
+    # --------------------------------------------------------
+
+    cybersecurity_solutions = filter_publishable(
+        entity.cybersecurity_solutions.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # PROJECTS
+    # --------------------------------------------------------
+
+    projects = filter_publishable(
+        entity.projects.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # BLOG POSTS
+    # --------------------------------------------------------
+
+    blog_posts = filter_publishable(
+        entity.blog_posts.all()
+    ).order_by("-published_at", "display_order")
+
+    # --------------------------------------------------------
+    # RECOGNITIONS
+    # --------------------------------------------------------
+
+    recognitions = filter_publishable(
+        entity.recognitions.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # TEAM CERTIFICATES
+    # --------------------------------------------------------
+
+    team_certificates = filter_publishable(
+        entity.team_certificates.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # CASE STUDIES
+    # --------------------------------------------------------
+
+    case_studies = filter_publishable(
+        entity.case_studies.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # TECHNOLOGY PARTNERS
+    # --------------------------------------------------------
+
+    technology_partners = TechnologyPartner.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).order_by("display_order", "id")
+
+    # --------------------------------------------------------
     # RESPONSE
     # --------------------------------------------------------
 
@@ -799,20 +804,13 @@ def get_combined_api(request, slug):
                 for item in gifs
             ],
 
-           
             "flash_sales": [
-                serialize_flash_sale(
-                    request,
-                    item,
-                )
+                serialize_flash_sale(request, item)
                 for item in flash_sales
             ],
 
             "affiliate_banners": [
-                serialize_affiliate_banner(
-                    request,
-                    item,
-                )
+                serialize_affiliate_banner(request, item)
                 for item in affiliate_banners
             ],
 
@@ -822,14 +820,50 @@ def get_combined_api(request, slug):
             # ],
 
             "upcoming_events": [
-                serialize_event(
-                    request,
-                    item,
-                )
+                serialize_event(request, item)
                 for item in events
             ],
 
             "today_deals": today_deals_list,
+
+            "things_we_do": [
+                serialize_thing_we_do(request, item)
+                for item in things_we_do
+            ],
+
+            "cybersecurity_solutions": [
+                serialize_cybersecurity_solution(request, item)
+                for item in cybersecurity_solutions
+            ],
+
+            "projects": [
+                serialize_project(request, item)
+                for item in projects
+            ],
+
+            "blog_posts": [
+                serialize_blog_post(request, item, full=False)
+                for item in blog_posts
+            ],
+
+            "recognitions": [
+                serialize_recognition(request, item)
+                for item in recognitions
+            ],
+
+            "team_certificates": [
+                serialize_team_certificate(request, item)
+                for item in team_certificates
+            ],
+
+            "case_studies": [
+                serialize_case_study_list(request, item)
+                for item in case_studies
+            ],
+             "partners": [
+                serialize_technology_partner(request, item)
+                for item in technology_partners
+            ],
         },
         status=200,
     )
@@ -916,7 +950,7 @@ def get_entities_api(request):
     for entity in active_entities:
 
         active_banner_count = filter_publishable(
-            entity.banners.all()
+            Banner.objects.filter(entities=entity)
         ).count()
 
         active_event_count = filter_publishable(
@@ -939,11 +973,7 @@ def get_entities_api(request):
             ).count()
         )
 
-        active_featured_product_count = (
-            filter_publishable(
-                entity.featured_products.all()
-            ).count()
-        )
+        active_featured_product_count = 0
 
         
 
@@ -980,3 +1010,706 @@ def get_entities_api(request):
         },
         status=200,
     )
+
+
+# ============================================================
+
+# ============================================================
+# PROTECTED API — THINGS WE DO
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_things_we_do_api(request, slug):
+    """
+    GET /api/things-we-do/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    things = filter_publishable(
+        entity.things_we_do.all()
+    ).order_by("display_order", "-created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "things_we_do": [
+                serialize_thing_we_do(request, t) for t in things
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — CYBERSECURITY SOLUTIONS
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_cybersecurity_solutions_api(request, slug):
+    """
+    GET /api/cybersecurity-solutions/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    solutions = filter_publishable(
+        entity.cybersecurity_solutions.all()
+    ).order_by("display_order", "-created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "cybersecurity_solutions": [
+                serialize_cybersecurity_solution(request, s) for s in solutions
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — PROJECTS
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_projects_api(request, slug):
+    """
+    GET /api/projects/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    projects = filter_publishable(
+        entity.projects.all()
+    ).order_by("display_order", "-created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "projects": [
+                serialize_project(request, p) for p in projects
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — BLOG POSTS (list)
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_blog_posts_api(request, slug):
+    """
+    GET /api/blog-posts/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    posts = filter_publishable(
+        entity.blog_posts.all()
+    ).order_by("-published_at", "display_order")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "blog_posts": [
+                serialize_blog_post(request, p, full=False) for p in posts
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — BLOG POST DETAIL
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_blog_post_detail_api(request, slug):
+    """
+    GET /api/blog-detail/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        post = BlogPost.objects.get(slug=slug, is_active=True)
+    except BlogPost.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Blog post '{slug}' not found"},
+            status=404,
+        )
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "blog_post": serialize_blog_post(request, post, full=True),
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — THINGS WE DO
+# ============================================================
+
+@csrf_exempt
+def proxy_things_we_do_api(request, slug):
+    """
+    GET /proxy/things-we-do/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/things-we-do/{slug}/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — CYBERSECURITY SOLUTIONS
+# ============================================================
+
+@csrf_exempt
+def proxy_cybersecurity_solutions_api(request, slug):
+    """
+    GET /proxy/cybersecurity-solutions/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/cybersecurity-solutions/{slug}/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — PROJECTS
+# ============================================================
+
+@csrf_exempt
+def proxy_projects_api(request, slug):
+    """
+    GET /proxy/projects/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/projects/{slug}/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — BLOG POSTS
+# ============================================================
+
+@csrf_exempt
+def proxy_blog_posts_api(request, slug):
+    """
+    GET /proxy/blog-posts/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/blog-posts/{slug}/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — BLOG POST DETAIL
+# ============================================================
+
+@csrf_exempt
+def proxy_blog_detail_api(request, slug):
+    """
+    GET /proxy/blog-detail/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/blog-detail/{slug}/", request)
+
+
+# ============================================================
+
+# ============================================================
+# PROTECTED API — RECOGNITIONS
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_recognitions_api(request, slug):
+    """
+    GET /api/recognitions/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    recognitions = filter_publishable(
+        entity.recognitions.all()
+    ).order_by("display_order", "-created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "recognitions": [
+                serialize_recognition(request, item) for item in recognitions
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — TEAM CERTIFICATES
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_team_certificates_api(request, slug):
+    """
+    GET /api/team-certificates/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Entity '{slug}' not found"},
+            status=404,
+        )
+
+    team_certificates = filter_publishable(
+        entity.team_certificates.all()
+    ).order_by("display_order", "-created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "team_certificates": [
+                serialize_team_certificate(request, item) for item in team_certificates
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — RECOGNITIONS
+# ============================================================
+
+@csrf_exempt
+def proxy_recognitions_api(request, slug):
+    """
+    GET /proxy/recognitions/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/recognitions/{slug}/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — TEAM CERTIFICATES
+# ============================================================
+
+@csrf_exempt
+def proxy_team_certificates_api(request, slug):
+    """
+    GET /proxy/team-certificates/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/team-certificates/{slug}/", request)
+
+
+# ============================================================
+# CASE STUDY — HELPERS
+
+# ============================================================
+
+def _active_case_studies():
+    """Return the base queryset of published Case Studies, with entity pre-fetched."""
+    return CaseStudy.objects.filter(is_active=True).select_related('entity')
+
+
+# ============================================================
+# PROTECTED API — CASE STUDIES LISTING + FILTERING
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_case_studies_api(request):
+    """
+    GET /api/case-studies/
+
+    Optional query params for filtering:
+      ?solution=<slug>
+      ?industry=<slug>
+      ?country=<slug>
+
+    Multiple params are ANDed together.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    qs = _active_case_studies().order_by("display_order", "-created_at")
+
+    solution_filter = request.GET.get("solution", "").strip()
+    industry_filter = request.GET.get("industry", "").strip()
+    country_filter  = request.GET.get("country",  "").strip()
+
+    # Filter by slugified match — compare incoming slug against
+    # the slugified version of each stored value.
+    filtered = []
+    for cs in qs:
+        if solution_filter and _slugify_value(cs.solution) != solution_filter:
+            continue
+        if industry_filter and _slugify_value(cs.industry) != industry_filter:
+            continue
+        if country_filter and _slugify_value(cs.country) != country_filter:
+            continue
+        filtered.append(cs)
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "count": len(filtered),
+            "case_studies": [
+                serialize_case_study_list(request, cs) for cs in filtered
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — DYNAMIC FILTER OPTIONS
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_case_study_filters_api(request):
+    """
+    GET /api/case-study-filters/
+
+    Returns unique, deduplicated solutions / industries / countries
+    derived from active Case Studies only.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    qs = _active_case_studies()
+
+    # Collect unique non-empty values preserving first-seen order
+    def _unique_options(field_name):
+        seen_slugs = set()
+        options = []
+        for value in qs.values_list(field_name, flat=True):
+            if not value:
+                continue
+            slug = _slugify_value(value)
+            if slug not in seen_slugs:
+                seen_slugs.add(slug)
+                options.append({"name": value, "slug": slug})
+        return options
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "solutions":  _unique_options("solution"),
+            "industries": _unique_options("industry"),
+            "countries":  _unique_options("country"),
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PROTECTED API — CASE STUDY DETAIL
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_case_study_detail_api(request, slug):
+    """
+    GET /api/case-studies/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        cs = CaseStudy.objects.get(slug=slug, is_active=True)
+    except CaseStudy.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Case study '{slug}' not found"},
+            status=404,
+        )
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "case_study": serialize_case_study_detail(request, cs),
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — CASE STUDIES LISTING + FILTERING
+# ============================================================
+
+@csrf_exempt
+def proxy_case_studies_api(request):
+    """
+    GET /proxy/case-studies/
+    Forwards query params (?solution=, ?industry=, ?country=) as-is.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/case-studies/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — DYNAMIC FILTER OPTIONS
+# ============================================================
+
+@csrf_exempt
+def proxy_case_study_filters_api(request):
+    """
+    GET /proxy/case-study-filters/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/case-study-filters/", request)
+
+
+# ============================================================
+# PUBLIC PROXY — CASE STUDY DETAIL
+# ============================================================
+
+@csrf_exempt
+def proxy_case_study_detail_api(request, slug):
+    """
+    GET /proxy/case-studies/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/case-studies/{slug}/", request)
+
+
+# ============================================================
+# PROTECTED API — EVENT DETAIL (with gallery)
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_event_detail_api(request, event_id):
+    """
+    GET /api/event-detail/<int:event_id>/
+
+    Returns a single active UpcomingEvent including its full gallery.
+    The 'status' field indicates 'upcoming' or 'past' based on event_date.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    try:
+        event = UpcomingEvent.objects.get(id=event_id, is_active=True)
+    except UpcomingEvent.DoesNotExist:
+        return _cors_json_response(
+            {"status": "error", "message": f"Event {event_id} not found"},
+            status=404,
+        )
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "event": serialize_event_detail(request, event),
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — EVENT DETAIL
+# ============================================================
+
+@csrf_exempt
+def proxy_event_detail_api(request, event_id):
+    """
+    GET /proxy/event-detail/<int:event_id>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/event-detail/{event_id}/", request)
+
+
+# ============================================================
+
+# ============================================================
+# PROTECTED API — TECHNOLOGY PARTNERS
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_partners_api(request, slug):
+    """
+    GET /api/partners/<slug>/
+
+    Returns all active TechnologyPartner records whose entity
+    matches the slug.  The slug is matched case-insensitively
+    against the stored entity string (spaces replaced by hyphens).
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    partners = TechnologyPartner.objects.filter(
+        is_active=True,
+    ).select_related('entity').order_by("display_order", "created_at")
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "slug": slug,
+            "partners": [
+                serialize_technology_partner(request, p) for p in partners
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — TECHNOLOGY PARTNERS
+# ============================================================
+
+@csrf_exempt
+def proxy_partners_api(request, slug):
+    """
+    GET /proxy/partners/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request(f"/api/partners/{slug}/", request)

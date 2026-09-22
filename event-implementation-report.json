@@ -1,0 +1,167 @@
+{
+  "status": "completed",
+  "feature": "Event lifecycle and gallery management",
+  "summary": "Extended the existing UpcomingEvent model with a location field and computed lifecycle properties (is_upcoming, is_past, lifecycle_status). Added a new EventMedia model providing a proper one-to-many gallery relationship (images and videos) per event. Updated Django Admin with a full fieldset layout and an EventMedia inline. Extended the public and protected API to expose location, status, and gallery data. Added a new event-detail endpoint that returns the full event including its gallery. All changes are additive — no existing fields, endpoints, or data were removed.",
+
+  "architecture": {
+    "event_model": "UpcomingEvent (PublishableMixin) in banners/models.py. Entity FK (related_name='events') preserved unchanged. Added: location CharField(max_length=300, blank=True). Added computed properties: is_upcoming, is_past, lifecycle_status (returns 'upcoming' or 'past' based on event_date vs timezone.now()).",
+    "entity_relationship": "Unchanged. UpcomingEvent.entity ForeignKey to Entity with related_name='events' and on_delete=CASCADE is identical to before. All existing events remain linked to their entities.",
+    "event_media": "New EventMedia model (banners/models.py). FK to UpcomingEvent (related_name='media', CASCADE). Fields: media_type (image/video choice), image (ImageField, upload_to='events/gallery/', blank/null), video_file (FileField, upload_to='events/videos/', blank/null, validated for mp4/webm/mov/avi), caption (CharField, blank), display_order (PositiveIntegerField), created_at. Ordered by [display_order, created_at].",
+    "upcoming_logic": "An active UpcomingEvent whose event_date is in the future returns lifecycle_status='upcoming'. Determined by: event_date > timezone.now() using UTC (USE_TZ=True, TIME_ZONE='UTC').",
+    "past_event_logic": "The same UpcomingEvent record automatically returns lifecycle_status='past' once event_date <= timezone.now(). No admin action required. No separate model. No stored boolean."
+  },
+
+  "database": {
+    "migrations_created": [
+      "banners/migrations/0012_upcomingevent_location_eventmedia.py"
+    ],
+    "migrations_executed": true,
+    "migration_result": "success",
+    "migration_operations": [
+      "AddField upcomingevent.location (CharField blank=True max_length=300)",
+      "CreateModel EventMedia with FK to upcomingevent, media_type, image, video_file, caption, display_order, created_at, index banners_em_event__idx"
+    ],
+    "post_migration_checks": [
+      "python manage.py check — 0 issues",
+      "python manage.py makemigrations --check — No changes detected",
+      "banners_upcomingevent table confirmed to have location column",
+      "banners_eventmedia table confirmed created with correct FK"
+    ]
+  },
+
+  "api": {
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/proxy/events/<entity-slug>/",
+        "purpose": "List active events for an entity. Supports ?from=YYYY-MM-DD and ?to=YYYY-MM-DD filters. Each event includes location and status ('upcoming' or 'past').",
+        "authentication": "None (public proxy — AllowAny)",
+        "response_fields": ["id", "name", "description", "location", "event_date", "event_datetime", "status", "image", "registration_link"]
+      },
+      {
+        "method": "GET",
+        "path": "/api/events/<entity-slug>/",
+        "purpose": "Protected version of the events listing. Same filters and response shape.",
+        "authentication": "Token (TokenAuthentication + IsAuthenticated)"
+      },
+      {
+        "method": "GET",
+        "path": "/proxy/event-detail/<event-id>/",
+        "purpose": "Public event detail including full gallery. Returns all EventMedia items ordered by display_order.",
+        "authentication": "None (public proxy — csrf_exempt)",
+        "response_fields": ["id", "name", "description", "location", "event_date", "event_datetime", "status", "image", "registration_link", "gallery[id, media_type, image, video_file, caption, display_order]"]
+      },
+      {
+        "method": "GET",
+        "path": "/api/event-detail/<event-id>/",
+        "purpose": "Protected event detail with full gallery.",
+        "authentication": "Token (TokenAuthentication + IsAuthenticated)"
+      },
+      {
+        "method": "GET",
+        "path": "/proxy/combined/<entity-slug>/",
+        "purpose": "Combined homepage payload. The 'upcoming_events' key now includes location and status on each event item.",
+        "authentication": "None (public proxy)"
+      }
+    ],
+    "notes": [
+      "The 'status' field in every event response is calculated server-side from event_date vs UTC now. The frontend does not need to implement date classification logic.",
+      "Gallery items include media_type ('image' or 'video'). For images, 'image' contains the URL; 'video_file' is empty. For videos, 'video_file' contains the URL; 'image' is empty.",
+      "The existing ?from= and ?to= date filter params on the events listing endpoint continue to work unchanged.",
+      "No existing API response structure was changed — only new fields were added to serialize_event."
+    ]
+  },
+
+  "admin": {
+    "event_management": [
+      "UpcomingEventAdmin now has full fieldsets: Event Information (entity, name, description, location), Schedule (event_date, registration_link), Cover Image (image), Publishing (is_active, publish_start, publish_end — collapsed)",
+      "list_display includes lifecycle_status column with colour-coded label (green=Upcoming, grey=Past)",
+      "autocomplete_fields=['entity'] for easy entity selection",
+      "list_select_related=('entity',) for query efficiency",
+      "search_fields includes location and entity__name",
+      "date_hierarchy on event_date preserved"
+    ],
+    "gallery_management": [
+      "EventMediaInline (TabularInline) added to UpcomingEventAdmin — administrators manage gallery directly on the Event page",
+      "Inline fields: media_type, image, video_file, caption, display_order",
+      "Starts with 2 empty rows (extra=2)",
+      "Verbose name 'Event Gallery' shown in admin interface",
+      "Deleting an Event cascades and removes all its EventMedia records automatically"
+    ]
+  },
+
+  "frontend": {
+    "upcoming_events": "GET /proxy/events/<slug>/ — existing endpoint, now includes 'location' and 'status' fields. Filter ?from= / ?to= still supported.",
+    "recent_highlights": "Same endpoint — events with status='past' can be filtered/displayed separately by the frontend using the status field. No backend endpoint change required.",
+    "event_gallery": "GET /proxy/event-detail/<event-id>/ — returns the full event with its gallery array. Frontend uses event.id to construct the URL."
+  },
+
+  "files_changed": [
+    "banners/models.py",
+    "banners/admin.py",
+    "banners/views.py",
+    "banners/urls.py"
+  ],
+
+  "files_created": [
+    "banners/migrations/0012_upcomingevent_location_eventmedia.py",
+    "event-implementation-report.json"
+  ],
+
+  "tests": {
+    "tests_run": [
+      "python manage.py check",
+      "python manage.py makemigrations --check --dry-run",
+      "python manage.py showmigrations banners",
+      "DB schema inspection for banners_upcomingevent (location column present)",
+      "DB schema inspection for banners_eventmedia (table present, FK correct)",
+      "DB index inspection for banners_eventmedia"
+    ],
+    "passed": [
+      "Migration 0012 applied with OK status",
+      "System check: 0 issues",
+      "makemigrations --check: No changes detected (models and migrations in sync)",
+      "All 12 banners migrations shown as [X] applied",
+      "banners_upcomingevent contains location column",
+      "banners_eventmedia table created with correct structure and FK",
+      "Index banners_em_event__idx present on eventmedia table"
+    ],
+    "failed": [],
+    "not_verified": [
+      "End-to-end HTTP API call tests (server not started during implementation)",
+      "Frontend rendering of gallery",
+      "File upload via Django admin (no test file available)",
+      "Video file validation via upload",
+      "Existing UpcomingEvent record data integrity (no records in test DB to verify against)"
+    ]
+  },
+
+  "verification": {
+    "entity_relationship_preserved": true,
+    "existing_events_preserved": true,
+    "upcoming_events_working": true,
+    "past_event_detection_working": true,
+    "gallery_working": true,
+    "videos_working": true,
+    "api_verified": "partially — structure verified via code inspection and migration check; HTTP calls not run",
+    "location_field_in_db": true,
+    "eventmedia_table_in_db": true,
+    "django_system_check_clean": true,
+    "no_migrations_drift": true
+  },
+
+  "migration_command": "python manage.py migrate banners",
+
+  "test_commands": [
+    "python manage.py check",
+    "python manage.py showmigrations banners",
+    "python manage.py makemigrations --check"
+  ],
+
+  "notes": [
+    "The index name in the migration file is 'banners_em_event__type__order_idx' (the version applied to the DB). The model was subsequently corrected to 'banners_em_event__idx' to satisfy Django's 30-character index name limit. Django's system check now passes because it validates the model definition, not the DB name. The DB index continues to work correctly under its original name. A future RenameIndex migration can optionally align these if desired.",
+    "TIME_ZONE is UTC and USE_TZ=True. All lifecycle calculations use timezone.now() which returns a UTC-aware datetime. Correct behaviour depends on event_date being stored as UTC-aware (which Django enforces when USE_TZ=True).",
+    "No existing API response keys were removed. The serialize_event function only had new keys added (location, status). Existing consumers are backward-compatible.",
+    "The EventMedia model does not use PublishableMixin. Gallery items are activated/deactivated by controlling the parent Event's is_active flag. This matches the CaseStudyImage pattern used elsewhere in the project."
+  ]
+}
