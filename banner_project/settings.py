@@ -4,17 +4,19 @@ Django settings for banner_project project.
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-multi-entity-banner-management-system-key'
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-only-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 
 # Application definition
 INSTALLED_APPS = [
@@ -44,6 +46,7 @@ REST_FRAMEWORK = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware placed at top
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -117,5 +120,5 @@ CORS_ALLOW_CREDENTIALS = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-API_TOKEN = "5540c3dfb5ea6df1d5dc165351e12525596ed7ea"
-API_BASE = "http://127.0.0.1:8001"
+API_TOKEN = os.getenv('API_TOKEN', '')
+API_BASE = os.getenv('API_BASE', 'http://127.0.0.1:8001')
