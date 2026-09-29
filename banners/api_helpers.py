@@ -58,7 +58,7 @@ def build_homepage_payload(request, entity):
     """
     from .serializers import (
         serialize_banner,
-        serialize_gif,
+        # serialize_gif,
         serialize_flash_sale,
         serialize_today_deal,
         serialize_affiliate_banner,
@@ -70,9 +70,9 @@ def build_homepage_payload(request, entity):
         Banner.objects.filter(entities=entity)
     ).order_by('display_order', '-created_at')
 
-    gifs = filter_publishable(
-        entity.gifs.all()
-    ).order_by('display_order', '-created_at')
+    # gifs = filter_publishable(
+    #     entity.gifs.all()
+    # ).order_by('display_order', '-created_at')
 
     flash_sales = filter_scheduled(
         entity.flash_sales.all()
@@ -92,7 +92,7 @@ def build_homepage_payload(request, entity):
 
     return {
         'banners': [serialize_banner(request, item) for item in banners],
-        'gifs': [serialize_gif(request, item) for item in gifs],
+        # 'gifs': [serialize_gif(request, item) for item in gifs],
         'flash_sales': [
             serialize_flash_sale(request, item) for item in flash_sales
         ],

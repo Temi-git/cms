@@ -20,7 +20,7 @@ from .models import (
     Entity,
     Banner,
     UpcomingEvent,
-    HomepageGif,
+    # HomepageGif,
     FlashSale,
     AffiliateBanner,
     TodayDeal,
@@ -41,7 +41,7 @@ from .models import (
 
 from .serializers import (
     serialize_banner,
-    serialize_gif,
+    # serialize_gif,
     serialize_affiliate_banner,
     serialize_event,
     serialize_event_detail,
@@ -57,6 +57,7 @@ from .serializers import (
     serialize_case_study_list,
     serialize_case_study_detail,
     serialize_technology_partner,
+    serialize_product,
     _slugify_value,
 )
 
@@ -390,7 +391,7 @@ def get_banner_api(request, slug):
         )
 
     banners = filter_publishable(
-        Banner.objects.filter(entities=entity)
+        entity.banners.all()
     ).order_by(
         "display_order",
         "-created_at",
@@ -567,24 +568,11 @@ def get_combined_api(request, slug):
     # --------------------------------------------------------
 
     banners = filter_publishable(
-        Banner.objects.filter(entities=entity)
+        entity.banners.all()
     ).order_by(
         "display_order",
         "-created_at",
     )
-
-    # --------------------------------------------------------
-    # GIFS
-    # --------------------------------------------------------
-
-    gifs = filter_publishable(
-        entity.gifs.all()
-    ).order_by(
-        "display_order",
-        "-created_at",
-    )
-
-   
 
     # --------------------------------------------------------
     # FLASH SALES
@@ -694,29 +682,29 @@ def get_combined_api(request, slug):
         "-created_at",
     )
 
-    today_deals_list = []
+    # today_deals_list = []
 
-    for deal in today_deals:
-        today_deals_list.append({
-            "id": deal.id,
-            "title": deal.title or "",
-            "subtitle": deal.subtitle or "",
-            "image": build_media_url(request, deal.image),
-            "product_id": deal.product.id if deal.product else None,
-            "display_order": deal.display_order,
-            "start_datetime": (
-                deal.start_datetime.isoformat()
-                if deal.start_datetime
-                else ""
-            ),
-            "end_datetime": (
-                deal.end_datetime.isoformat()
-                if deal.end_datetime
-                else ""
-            ),
-            "is_live": deal.is_currently_visible(),
-            "seconds_remaining": deal.seconds_remaining,
-        })
+    # for deal in today_deals:
+    #     today_deals_list.append({
+    #         "id": deal.id,
+    #         "title": deal.title or "",
+    #         "subtitle": deal.subtitle or "",
+    #         "image": build_media_url(request, deal.image),
+    #         "product_id": deal.product.id if deal.product else None,
+    #         "display_order": deal.display_order,
+    #         "start_datetime": (
+    #             deal.start_datetime.isoformat()
+    #             if deal.start_datetime
+    #             else ""
+    #         ),
+    #         "end_datetime": (
+    #             deal.end_datetime.isoformat()
+    #             if deal.end_datetime
+    #             else ""
+    #         ),
+    #         "is_live": deal.is_currently_visible(),
+    #         "seconds_remaining": deal.seconds_remaining,
+    #     })
 
     # --------------------------------------------------------
     # THINGS WE DO
@@ -799,10 +787,10 @@ def get_combined_api(request, slug):
                 for item in banners
             ],
 
-            "gifs": [
-                serialize_gif(request, item)
-                for item in gifs
-            ],
+            # "gifs": [
+            #     serialize_gif(request, item)
+            #     for item in gifs
+            # ],
 
             "flash_sales": [
                 serialize_flash_sale(request, item)
@@ -824,7 +812,10 @@ def get_combined_api(request, slug):
                 for item in events
             ],
 
-            "today_deals": today_deals_list,
+           "today_deals": [
+    serialize_today_deal(request, item)
+    for item in today_deals
+],
 
             "things_we_do": [
                 serialize_thing_we_do(request, item)
@@ -901,29 +892,27 @@ def proxy_product_api(request, product_id):
 def get_product_api(request, product_id):
     """
     GET /api/product/<product_id>/
-    Returns a single product.
+    Returns a single product with FAQs.
     """
-    
+
     if request.method == "OPTIONS":
         return _cors_json_response({}, status=200)
-    
+
     try:
         product = Product.objects.get(id=product_id, is_active=True)
     except Product.DoesNotExist:
         return _cors_json_response(
             {"status": "error", "message": "Product not found"},
-            status=404
+            status=404,
         )
-    
-    return _cors_json_response({
-        "id": product.id,
-        "name": product.name,
-        "slug": product.slug,
-        "price": str(product.price) if product.price else "",
-        "description": product.description or "",
-        "image": build_media_url(request, product.image),
-        "is_active": product.is_active,
-    }, status=200)
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "product": serialize_product(request, product, include_faqs=True),
+        },
+        status=200,
+    )
 # ============================================================
 # ENTITIES API
 # ============================================================
@@ -950,16 +939,16 @@ def get_entities_api(request):
     for entity in active_entities:
 
         active_banner_count = filter_publishable(
-            Banner.objects.filter(entities=entity)
+            entity.banners.all()
         ).count()
 
         active_event_count = filter_publishable(
             entity.events.all()
         ).count()
 
-        active_gif_count = filter_publishable(
-            entity.gifs.all()
-        ).count()
+        # active_gif_count = filter_publishable(
+        #     entity.gifs.all()
+        # ).count()
 
         
 
@@ -987,7 +976,7 @@ def get_entities_api(request):
 
                 "banner_count": active_banner_count,
                 "event_count": active_event_count,
-                "gif_count": active_gif_count,
+                # "gif_count": active_gif_count,
                 
                 "flash_sale_count": (
                     active_flash_sale_count
@@ -1713,3 +1702,60 @@ def proxy_partners_api(request, slug):
             status=405,
         )
     return _forward_request(f"/api/partners/{slug}/", request)
+
+
+# ============================================================
+# PROTECTED API — PRODUCTS LISTING
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_products_api(request):
+    """
+    GET /api/products/
+
+    Optional query params:
+      ?special=1   — only is_special products
+      ?hot=1       — only is_hot products
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    qs = Product.objects.filter(is_active=True).order_by("display_order", "name")
+
+    if request.GET.get("special") == "1":
+        qs = qs.filter(is_special=True)
+    if request.GET.get("hot") == "1":
+        qs = qs.filter(is_hot=True)
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "count": qs.count(),
+            "products": [
+                serialize_product(request, p, include_faqs=False) for p in qs
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# PUBLIC PROXY — PRODUCTS LISTING
+# ============================================================
+
+@csrf_exempt
+def proxy_products_api(request):
+    """
+    GET /proxy/products/
+    Forwards ?special=1 and ?hot=1 query params as-is.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/products/", request)

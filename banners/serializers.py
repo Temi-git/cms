@@ -9,6 +9,46 @@ from .api_helpers import build_media_url
 
 
 # ============================================================
+# PRODUCT SERIALIZERS
+# ============================================================
+
+def serialize_product_faq(faq):
+    return {
+        "id": faq.id,
+        "question": faq.question or "",
+        "answer": faq.answer or "",
+        "display_order": faq.display_order,
+    }
+
+
+def serialize_product(request, product, include_faqs=False):
+    """
+    Full product serializer.
+    include_faqs=True for detail views; False for lightweight listing.
+    """
+    data = {
+        "id": product.id,
+        "external_product_id": product.external_product_id or "",
+        "name": product.name or "",
+        "slug": product.slug or "",
+        "price": str(product.price) if product.price else "",
+        "description": product.description or "",
+        "image": build_media_url(request, product.image),
+        "product_url": product.product_url or "",
+        "is_active": product.is_active,
+        "is_special": product.is_special,
+        "is_hot": product.is_hot,
+        "display_order": product.display_order,
+    }
+    if include_faqs:
+        data["faqs"] = [
+            serialize_product_faq(faq)
+            for faq in product.faqs.filter(is_active=True).order_by("display_order", "created_at")
+        ]
+    return data
+
+
+# ============================================================
 # BANNER / MEDIA SERIALIZERS
 # ============================================================
 
@@ -27,15 +67,15 @@ def serialize_banner(request, banner):
     }
 
 
-def serialize_gif(request, gif):
-    return {
-        "id": gif.id,
-        "title": gif.title or "",
-        "description": gif.description or "",
-        "media_file": build_media_url(request, gif.media_file),
-        "link": gif.link or "",
-        "display_order": gif.display_order,
-    }
+# def serialize_gif(request, gif):
+#     return {
+#         "id": gif.id,
+#         "title": gif.title or "",
+#         "description": gif.description or "",
+#         "media_file": build_media_url(request, gif.media_file),
+#         "link": gif.link or "",
+#         "display_order": gif.display_order,
+#     }
 
 
 def serialize_affiliate_banner(request, banner):
@@ -142,7 +182,11 @@ def serialize_today_deal(request, deal):
         "title": deal.title or "",
         "subtitle": deal.subtitle or "",
         "image": build_media_url(request, deal.image),
+
         "product_id": deal.product.id if deal.product else None,
+        "product_name": deal.product.name if deal.product else "",
+        "product_url": deal.product.product_url if deal.product else "",
+
         "start_datetime": (
             deal.start_datetime.isoformat()
             if deal.start_datetime
@@ -157,7 +201,6 @@ def serialize_today_deal(request, deal):
         "seconds_remaining": deal.seconds_remaining,
         "display_order": deal.display_order,
     }
-
 
 # ============================================================
 # CONTENT SERIALIZERS (Things We Do, Cybersecurity, Projects, Blog)

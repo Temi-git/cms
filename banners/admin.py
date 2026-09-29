@@ -12,12 +12,13 @@ admin.site.index_title = "CMS Administration"
 from .models import (
     Entity,
     Banner,
-    HomepageGif,
+    # HomepageGif,
     FlashSale,
     TodayDeal,
     AffiliateBanner,
     UpcomingEvent,
     Product,
+    ProductFAQ,
     ThingWeDo,
     CybersecuritySolution,
     Project,
@@ -37,9 +38,9 @@ from .models import (
 # ENTITY INLINE CONTENT
 # ============================================================
 
-class HomepageGifInline(admin.TabularInline):
-    model = HomepageGif
-    extra = 1
+# class HomepageGifInline(admin.TabularInline):
+#     model = HomepageGif
+#     extra = 1
 
 
 class FlashSaleInline(admin.TabularInline):
@@ -114,7 +115,7 @@ class EntityAdmin(admin.ModelAdmin):
         'url',
         'is_active',
         'banner_count',
-        'gif_count',
+        # 'gif_count',
         'flash_sale_count',
         'today_deal_count',
         'affiliate_banner_count',
@@ -144,7 +145,7 @@ class EntityAdmin(admin.ModelAdmin):
     # ========================================================
 
     inlines = [
-        HomepageGifInline,
+        # HomepageGifInline,
         FlashSaleInline,
         TodayDealInline,
         AffiliateBannerInline,
@@ -162,9 +163,9 @@ class EntityAdmin(admin.ModelAdmin):
     def banner_count(self, obj):
         return obj.banners.count()
 
-    @admin.display(description='GIFs')
-    def gif_count(self, obj):
-        return obj.gifs.count()
+    # @admin.display(description='GIFs')
+    # def gif_count(self, obj):
+    #     return obj.gifs.count()
 
  
 
@@ -208,7 +209,7 @@ class BannerAdmin(admin.ModelAdmin):
 
     list_display = (
         'title',
-        'entity_list',
+        'entity',
         'media_type',
         'media_preview',
         'is_active',
@@ -216,7 +217,7 @@ class BannerAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
-        'entities',
+        'entity',
         'media_type',
         'is_active',
         'created_at',
@@ -225,13 +226,12 @@ class BannerAdmin(admin.ModelAdmin):
     search_fields = (
         'title',
         'text',
-        'entities__name',
+        'entity__name',
     )
 
-    # filter_horizontal renders a dual-listbox in the admin:
-    #   Available Entities  →  Chosen Entities
-    # The admin can tick Proxynet Group, Promallshop, or both.
-    filter_horizontal = ('entities',)
+    list_select_related = ('entity',)
+
+    autocomplete_fields = ['entity']
 
     # Organize fields into sections for better admin UX
     fieldsets = (
@@ -241,7 +241,7 @@ class BannerAdmin(admin.ModelAdmin):
                 'proxy_title',
                 'text',
                 'link',
-                'entities',        # ← replaces the old 'entity' FK field
+                'entity',
                 'media_type',
             )
         }),
@@ -263,14 +263,6 @@ class BannerAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-
-    @admin.display(description='Entities')
-    def entity_list(self, obj):
-        """Show all assigned entities as a comma-separated string."""
-        names = [e.name for e in obj.entities.all()]
-        if not names:
-            return '—'
-        return ', '.join(names)
 
     @admin.display(description='Media Preview')
     def media_preview(self, obj):
@@ -306,19 +298,19 @@ class BannerAdmin(admin.ModelAdmin):
 # HOMEPAGE GIF ADMIN
 # ============================================================
 
-@admin.register(HomepageGif)
-class HomepageGifAdmin(admin.ModelAdmin):
+# @admin.register(HomepageGif)
+# class HomepageGifAdmin(admin.ModelAdmin):
 
-    list_display = (
-        'id',
-        'entity',
-        'is_active',
-    )
+#     list_display = (
+#         'id',
+#         'entity',
+#         'is_active',
+#     )
 
-    list_filter = (
-        'entity',
-        'is_active',
-    )
+#     list_filter = (
+#         'entity',
+#         'is_active',
+#     )
 
 
 
@@ -1171,10 +1163,68 @@ class CustomTokenAdmin(TokenAdmin):
 
     # admin.py – Product admin
 
+class ProductFAQInline(admin.TabularInline):
+    model = ProductFAQ
+    extra = 1
+    fields = ('question', 'answer', 'display_order', 'is_active')
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'price', 'is_active', 'created_at')
-    list_filter = ('is_active',)
-    search_fields = ('name', 'slug', 'description')
+
+    list_display = (
+        'name',
+        'external_product_id',
+        'price',
+        'is_special',
+        'is_hot',
+        'is_active',
+        'display_order',
+        'created_at',
+    )
+
+    list_filter = (
+        'is_active',
+        'is_special',
+        'is_hot',
+    )
+
+    search_fields = ('name', 'slug', 'description', 'external_product_id')
+
     prepopulated_fields = {'slug': ('name',)}
-    fields = ('name', 'slug', 'image', 'price', 'description', 'is_active')
+
+    list_editable = ('is_special', 'is_hot', 'is_active', 'display_order')
+
+    readonly_fields = ('created_at', 'updated_at')
+
+    inlines = [ProductFAQInline]
+
+    fieldsets = (
+        ('Product Information', {
+            'fields': (
+                'name',
+                'slug',
+                'external_product_id',
+                'product_url',
+                'image',
+                'price',
+                'description',
+            ),
+        }),
+        ('Editorial Controls', {
+            'fields': (
+                'is_active',
+                'is_special',
+                'is_hot',
+                'display_order',
+            ),
+            'description': (
+                'These fields are admin-controlled and are '
+                'never overwritten by the external product sync.'
+            ),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )

@@ -1,0 +1,254 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n static %}
+
+{% block title %}
+    {{ title }} | {{ site_title|default:_('Django site admin') }}
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+    <!-- ================================================== -->
+    <!-- PROXYNET GROUP -->
+    <!-- ================================================== -->
+
+    <div class="admin-business-section">
+        <h2 class="admin-business-title">PROXYNET GROUP</h2>
+
+        <div class="admin-model-grid">
+
+            {% for app in app_list %}
+                {% for model in app.models %}
+
+                    {% if model.object_name == "Banner" or model.object_name == "BlogPost" or model.object_name == "CaseStudy" or model.object_name == "CybersecuritySolution" or model.object_name == "UpcomingEvent" or model.object_name == "Project" or model.object_name == "Recognition" or model.object_name == "TeamCertificate" or model.object_name == "TechnologyPartner" or model.object_name == "ThingWeDo" %}
+
+                        <div class="admin-model-card">
+
+                            <div class="admin-model-card__header">
+                                <h3>
+                                    {% if model.admin_url %}
+                                        <a href="{{ model.admin_url }}">
+                                            {{ model.name }}
+                                        </a>
+                                    {% else %}
+                                        {{ model.name }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+
+                            <div class="admin-model-card__actions">
+
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}" class="add-link">
+                                        + Add
+                                    </a>
+                                {% endif %}
+
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}" class="manage-link">
+                                        Manage
+                                    </a>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
+            {% endfor %}
+
+        </div>
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- PROMALLSHOP -->
+    <!-- ================================================== -->
+
+    <div class="admin-business-section">
+        <h2 class="admin-business-title">PROMALLSHOP</h2>
+
+        <div class="admin-model-grid">
+
+            {% for app in app_list %}
+                {% for model in app.models %}
+
+                   {% if model.object_name == "Banner" or model.object_name == "Product" or model.object_name == "FlashSale" or model.object_name == "TodayDeal" or model.object_name == "AffiliateBanner"  or model.object_name == "UpcomingEvent" %}
+
+                        <div class="admin-model-card">
+
+                            <div class="admin-model-card__header">
+                                <h3>
+                                    {% if model.admin_url %}
+                                        <a href="{{ model.admin_url }}">
+                                            {{ model.name }}
+                                        </a>
+                                    {% else %}
+                                        {{ model.name }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+
+                            <div class="admin-model-card__actions">
+
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}" class="add-link">
+                                        + Add
+                                    </a>
+                                {% endif %}
+
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}" class="manage-link">
+                                        Manage
+                                    </a>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
+            {% endfor %}
+
+        </div>
+    </div>
+
+
+    <!-- ================================================== -->
+    <!-- SYSTEM -->
+    <!-- ================================================== -->
+
+    <div class="admin-business-section">
+        <h2 class="admin-business-title">SYSTEM</h2>
+
+        <div class="admin-model-grid">
+
+            {% for app in app_list %}
+                {% for model in app.models %}
+
+                    {% if model.object_name == "Entity" or model.object_name == "Token" %}
+
+                        <div class="admin-model-card">
+
+                            <div class="admin-model-card__header">
+                                <h3>
+                                    {% if model.admin_url %}
+                                        <a href="{{ model.admin_url }}">
+                                            {{ model.name }}
+                                        </a>
+                                    {% else %}
+                                        {{ model.name }}
+                                    {% endif %}
+                                </h3>
+                            </div>
+
+                            <div class="admin-model-card__actions">
+
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}" class="add-link">
+                                        + Add
+                                    </a>
+                                {% endif %}
+
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}" class="manage-link">
+                                        Manage
+                                    </a>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                {% endfor %}
+            {% endfor %}
+
+        </div>
+    </div>
+
+</div>
+
+
+<style>
+    .admin-business-section {
+        margin-bottom: 35px;
+    }
+
+    .admin-business-title {
+        margin: 0 0 15px;
+        padding: 12px 16px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #417690;
+        color: #333;
+    }
+
+    .admin-model-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 15px;
+    }
+
+    .admin-model-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .admin-model-card__header {
+        padding: 16px;
+    }
+
+    .admin-model-card__header h3 {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .admin-model-card__header a {
+        color: #417690;
+        text-decoration: none;
+    }
+
+    .admin-model-card__header a:hover {
+        text-decoration: underline;
+    }
+
+    .admin-model-card__actions {
+        display: flex;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #f8f8f8;
+        border-top: 1px solid #eee;
+    }
+
+    .admin-model-card__actions a {
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+    .add-link {
+        color: #417690;
+        font-weight: 600;
+    }
+
+    .manage-link {
+        color: #666;
+    }
+
+    @media (max-width: 700px) {
+        .admin-model-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{% endblock %}

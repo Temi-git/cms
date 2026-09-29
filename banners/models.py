@@ -19,8 +19,24 @@ class Product(models.Model):
         blank=True,
         help_text="URL-friendly version of the name.",
     )
+    # External sync fields ──────────────────────────────────────
+    external_product_id = models.CharField(
+        max_length=200,
+        blank=True,
+        db_index=True,
+        unique=True,
+        null=True,
+        help_text="Unique identifier from the external Promallshop product API. Used to match and avoid duplicates during sync.",
+        verbose_name="External Product ID",
+    )
+    product_url = models.URLField(
+        blank=True,
+        help_text="URL of this product on the Promallshop website. Used by the BUY NOW button on Today's Deal.",
+    )
     image = models.ImageField(
         upload_to="products/",
+        blank=True,
+        null=True,
         help_text="Recommended size: 800 x 800 px. Product main image.",
     )
     price = models.DecimalField(
@@ -34,15 +50,30 @@ class Product(models.Model):
         blank=True,
         help_text="Product description.",
     )
+    # Admin-controlled editorial fields ─────────────────────────
     is_active = models.BooleanField(
         default=True,
         help_text="Show this product on the site.",
+    )
+    is_special = models.BooleanField(
+        default=False,
+        help_text="Mark this product as a Special product (admin-controlled, never set by sync).",
+        verbose_name="Is Special",
+    )
+    is_hot = models.BooleanField(
+        default=False,
+        help_text="Mark this product as a Hot product (admin-controlled, never set by sync).",
+        verbose_name="Is Hot",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order in listings. Lower numbers appear first.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = ['display_order', 'name']
         verbose_name = "Product"
         verbose_name_plural = "Products"
 
@@ -52,7 +83,13 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             from django.utils.text import slugify
-            self.slug = slugify(self.name)
+            base = slugify(self.name)
+            slug = base
+            n = 1
+            while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
 
@@ -104,9 +141,9 @@ class Entity(models.Model):
     def event_count(self):
         return self.events.count()
 
-    @property
-    def gif_count(self):
-        return self.gifs.count()
+    # @property
+    # def gif_count(self):
+    #     return self.gifs.count()
 
     @property
     def flash_sale_count(self):
@@ -158,7 +195,7 @@ class Entity(models.Model):
         """Total count of all content across all models for this entity"""
         return (
             self.banner_count +
-            self.gif_count +
+            # self.gif_count +
             self.flash_sale_count +
             self.today_deal_count +
             self.affiliate_banner_count +
@@ -308,11 +345,11 @@ class Banner(PublishableMixin):
         ('youtube', 'YouTube Video'),
     ]
 
-    entities = models.ManyToManyField(
+    entity = models.ForeignKey(
         Entity,
         related_name="banners",
-        help_text="Select one or more entities this banner belongs to.",
-        verbose_name="Entities",
+        on_delete=models.CASCADE,
+        help_text="Entity this banner belongs to.",
     )
 
     title = models.CharField(
@@ -377,73 +414,70 @@ class Banner(PublishableMixin):
 
         indexes = [
             models.Index(
-                fields=["is_active", "display_order"]
-            ),
-        ]
-
-    def __str__(self):
-        entity_names = ", ".join(
-            e.name for e in self.entities.all()
-        ) or "No Entity"
-        return f"{self.title} - [{entity_names}]"
-
-
-# ============================================================
-# HOMEPAGE GIF
-# ============================================================
-
-class HomepageGif(PublishableMixin):
-
-    entity = models.ForeignKey(
-        Entity,
-        related_name="gifs",
-        on_delete=models.CASCADE,
-        help_text="Entity this GIF belongs to.",
-    )
-
-    title = models.CharField(
-        max_length=200,
-        help_text="Internal name or label for this GIF.",
-    )
-
-    description = models.TextField(
-        blank=True,
-        help_text="Optional description shown with the GIF.",
-    )
-
-    media_file = models.FileField(
-        upload_to="gifs/",
-        validators=[
-            FileExtensionValidator(
-                allowed_extensions=["gif"]
-            )
-        ],
-        help_text="Recommended max width: 1200px, keep file size under 1MB",
-    )
-
-    link = models.URLField(
-        blank=True,
-        help_text="Optional destination URL when the GIF is clicked.",
-    )
-
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order on the homepage. Lower numbers appear first.",
-    )
-
-    class Meta:
-        ordering = ["display_order", "-created_at"]
-        verbose_name = "Homepage GIF"
-        verbose_name_plural = "Homepage GIFs"
-
-        indexes = [
-            models.Index(
                 fields=["entity", "is_active", "display_order"]
             ),
         ]
 
     def __str__(self):
         return f"{self.title} - {self.entity.name}"
+
+
+# ============================================================
+# HOMEPAGE GIF
+# ============================================================
+
+# class HomepageGif(PublishableMixin):
+
+#     entity = models.ForeignKey(
+#         Entity,
+#         related_name="gifs",
+#         on_delete=models.CASCADE,
+#         help_text="Entity this GIF belongs to.",
+#     )
+
+#     title = models.CharField(
+#         max_length=200,
+#         help_text="Internal name or label for this GIF.",
+#     )
+
+#     description = models.TextField(
+#         blank=True,
+#         help_text="Optional description shown with the GIF.",
+#     )
+
+#     media_file = models.FileField(
+#         upload_to="gifs/",
+#         validators=[
+#             FileExtensionValidator(
+#                 allowed_extensions=["gif"]
+#             )
+#         ],
+#         help_text="Recommended max width: 1200px, keep file size under 1MB",
+#     )
+
+#     link = models.URLField(
+#         blank=True,
+#         help_text="Optional destination URL when the GIF is clicked.",
+#     )
+
+#     display_order = models.PositiveIntegerField(
+#         default=0,
+#         help_text="Display order on the homepage. Lower numbers appear first.",
+#     )
+
+#     class Meta:
+#         ordering = ["display_order", "-created_at"]
+#         verbose_name = "Homepage GIF"
+#         verbose_name_plural = "Homepage GIFs"
+
+#         indexes = [
+#             models.Index(
+#                 fields=["entity", "is_active", "display_order"]
+#             ),
+#         ]
+
+#     def __str__(self):
+#         return f"{self.title} - {self.entity.name}"
 
 
 # ============================================================
@@ -560,6 +594,54 @@ class TodayDeal(ScheduledMixin):
         entity_name = self.entity.name if self.entity else "No Entity"
         product_name = self.product.name if self.product else "No Product"
         return f"{self.title} - {entity_name} → {product_name}"
+
+
+# ============================================================
+# PRODUCT FAQ
+# ============================================================
+
+class ProductFAQ(models.Model):
+    """
+    A single FAQ entry for a Product.
+    One Product → many ProductFAQ records.
+    """
+
+    product = models.ForeignKey(
+        Product,
+        related_name="faqs",
+        on_delete=models.CASCADE,
+        help_text="The product this FAQ belongs to.",
+    )
+
+    question = models.CharField(
+        max_length=500,
+        help_text="The FAQ question.",
+    )
+
+    answer = models.TextField(
+        help_text="The FAQ answer.",
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first.",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Show this FAQ on the site.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "created_at"]
+        verbose_name = "Product FAQ"
+        verbose_name_plural = "Product FAQs"
+
+    def __str__(self):
+        return f"FAQ for '{self.product.name}': {self.question[:60]}"
 
 
 # ============================================================

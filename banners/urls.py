@@ -35,6 +35,8 @@ from .views import (
     proxy_event_detail_api,
     get_partners_api,
     proxy_partners_api,
+    get_products_api,
+    proxy_products_api,
 )
 
 app_name = "banners"
@@ -307,5 +309,21 @@ urlpatterns = [
         "api/partners/<slug:slug>/",
         get_partners_api,
         name="api-partners",
+    ),
+
+    # ============================================================
+    # PRODUCTS LISTING
+    # ============================================================
+
+    path(
+        "proxy/products/",
+        proxy_products_api,
+        name="proxy-products",
+    ),
+
+    path(
+        "api/products/",
+        get_products_api,
+        name="api-products",
     ),
 ]
