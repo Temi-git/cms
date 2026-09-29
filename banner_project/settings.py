@@ -121,4 +121,9 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 API_TOKEN = os.getenv('API_TOKEN', '')
-API_BASE = os.getenv('API_BASE', 'http://127.0.0.1:8001')
+API_BASE = os.getenv('API_BASE', 'http://127.0.0.1:8000')
+
+SITE_URL = os.getenv(
+    'SITE_URL',
+    'http://127.0.0.1:8000'
+)

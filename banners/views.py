@@ -199,7 +199,7 @@ API_TOKEN = getattr(
 API_BASE = getattr(
     settings,
     "API_BASE",
-    "http://127.0.0.1:8001",
+    "http://127.0.0.1:8000",
 )
 
 
@@ -277,8 +277,6 @@ def _forward_request(endpoint, request):
         data,
         status=response.status_code,
     )
-
-
 # ============================================================
 # PUBLIC PROXY
 # ============================================================

@@ -7,6 +7,7 @@ and the homepage payload builder.
 All serializer functions have been moved to banners/serializers.py.
 """
 
+from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
@@ -18,11 +19,11 @@ from django.utils import timezone
 def build_media_url(request, file_field):
     if not file_field:
         return ''
+
     try:
-        return request.build_absolute_uri(file_field.url)
+        return f"{settings.SITE_URL}{file_field.url}"
     except Exception:
         return ''
-
 
 # ============================================================
 # QUERYSET FILTERS
