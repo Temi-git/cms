@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import requests
@@ -6,8 +7,9 @@ from django.conf import settings
 from django.db import models
 from django.http import JsonResponse
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import (
@@ -322,7 +324,6 @@ def proxy_events_api(request, slug):
         request,
     )
 
-
 @api_view(["GET", "OPTIONS"])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -338,14 +339,36 @@ def proxy_combined_api(request, slug):
     if request.method == "OPTIONS":
         return _cors_json_response({}, status=200)
 
+    User = get_user_model()
+    username = os.getenv("DJANGO_ADMIN_USERNAME")
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return _cors_json_response(
+            {
+                "status": "error",
+                "message": "Internal API user does not exist.",
+            },
+            status=500,
+        )
+
     factory = APIRequestFactory()
 
     internal_request = factory.get(
         request.get_full_path(),
-        HTTP_AUTHORIZATION=f"Token {API_TOKEN}",
+        request.GET,
     )
 
-    return get_combined_api(internal_request, slug)
+    force_authenticate(
+        internal_request,
+        user=user,
+    )
+
+    return get_combined_api(
+        internal_request,
+        slug,
+    )
 
 
 @api_view(["GET", "OPTIONS"])
