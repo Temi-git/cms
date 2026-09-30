@@ -7,6 +7,7 @@ from django.db import models
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.test import APIRequestFactory
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import (
@@ -328,15 +329,23 @@ def proxy_events_api(request, slug):
 def proxy_combined_api(request, slug):
     """
     GET /proxy/combined/<slug>/
+
+    Public endpoint for the frontend.
+    Calls the protected combined API internally
+    without making an HTTP request to the server itself.
     """
 
     if request.method == "OPTIONS":
         return _cors_json_response({}, status=200)
 
-    return _forward_request(
-        f"/api/combined/{slug}/",
-        request,
+    factory = APIRequestFactory()
+
+    internal_request = factory.get(
+        request.get_full_path(),
+        HTTP_AUTHORIZATION=f"Token {API_TOKEN}",
     )
+
+    return get_combined_api(internal_request, slug)
 
 
 @api_view(["GET", "OPTIONS"])
