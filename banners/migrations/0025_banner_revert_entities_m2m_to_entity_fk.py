@@ -23,7 +23,8 @@ def copy_m2m_to_fk(apps, schema_editor):
     Banner = apps.get_model("banners", "Banner")
     db_alias = schema_editor.connection.alias
 
-    through = Banner.entities.through  # banners_banner_entities
+    through = Banner.entities.through
+
     for banner in Banner.objects.using(db_alias).all():
         row = (
             through.objects.using(db_alias)
@@ -31,16 +32,21 @@ def copy_m2m_to_fk(apps, schema_editor):
             .order_by("id")
             .first()
         )
+
         if row:
             banner.entity_id = row.entity_id
             banner.save(update_fields=["entity_id"])
 
 
 def reverse_copy(apps, schema_editor):
-    """Reverse: populate M2M from FK (no-op if M2M table has data)."""
+    """
+    Reverse: populate M2M from FK.
+    """
     Banner = apps.get_model("banners", "Banner")
     db_alias = schema_editor.connection.alias
+
     through = Banner.entities.through
+
     for banner in Banner.objects.using(db_alias).all():
         if banner.entity_id:
             through.objects.using(db_alias).get_or_create(
@@ -49,8 +55,34 @@ def reverse_copy(apps, schema_editor):
             )
 
 
-class Migration(migrations.Migration):
+def drop_stale_entity_index(apps, schema_editor):
+    """
+    MySQL can retain the old physical index after migration 0021
+    removes the Banner.entity field.
 
+    Migration 0023 removes that index from Django's migration state
+    only. Before migration 0025 recreates the composite index, remove
+    the stale physical index if it still exists.
+    """
+    table_name = "banners_banner"
+    index_name = "banners_ban_entity__73670f_idx"
+
+    constraints = schema_editor.connection.introspection.get_constraints(
+        schema_editor.connection.cursor(),
+        table_name,
+    )
+
+    if index_name in constraints:
+        schema_editor.execute(
+            f"DROP INDEX {schema_editor.quote_name(index_name)} "
+            f"ON {schema_editor.quote_name(table_name)}"
+        )
+
+
+class Migration(migrations.Migration):
+ # MySQL cannot roll back DDL such as DROP INDEX inside a transaction.
+    # This migration intentionally performs that DDL.
+    atomic = False
     dependencies = [
         ("banners", "0023_remove_banner_banners_ban_entity__73670f_idx"),
     ]
@@ -72,9 +104,12 @@ class Migration(migrations.Migration):
         ),
 
         # Step 2: Populate entity_id from the M2M table.
-        migrations.RunPython(copy_m2m_to_fk, reverse_copy),
+        migrations.RunPython(
+            copy_m2m_to_fk,
+            reverse_copy,
+        ),
 
-        # Step 3: Remove the M2M field (drops banners_banner_entities table).
+        # Step 3: Remove the M2M field.
         migrations.RemoveField(
             model_name="banner",
             name="entities",
@@ -94,6 +129,13 @@ class Migration(migrations.Migration):
             ),
         ),
 
+        # MySQL may still have the old physical index from migration 0021.
+        # Remove it before recreating the intended composite index.
+        migrations.RunPython(
+            drop_stale_entity_index,
+            migrations.RunPython.noop,
+        ),
+
         # Step 5: Restore the original composite index.
         migrations.AddIndex(
             model_name="banner",
@@ -109,3 +151,4 @@ class Migration(migrations.Migration):
             name="banners_ban_is_acti_66e158_idx",
         ),
     ]
+
