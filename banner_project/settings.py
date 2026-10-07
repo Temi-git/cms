@@ -129,5 +129,5 @@ API_BASE = os.getenv('API_BASE', 'http://127.0.0.1:8000')
 
 SITE_URL = os.getenv(
     'SITE_URL',
-    'http://127.0.0.1:8000'
+    'https://manager.promallshop.com'
 )
