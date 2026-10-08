@@ -8,91 +8,6 @@ from django.utils import timezone
 # ENTITY
 # ============================================================
 
-class Product(models.Model):
-    name = models.CharField(
-        max_length=200,
-        help_text="Product name.",
-    )
-    slug = models.SlugField(
-        max_length=200,
-        unique=True,
-        blank=True,
-        help_text="URL-friendly version of the name.",
-    )
-    # External sync fields ──────────────────────────────────────
-    external_product_id = models.CharField(
-        max_length=200,
-        blank=True,
-        db_index=True,
-        unique=True,
-        null=True,
-        help_text="Unique identifier from the external Promallshop product API. Used to match and avoid duplicates during sync.",
-        verbose_name="External Product ID",
-    )
-    product_url = models.URLField(
-        blank=True,
-        help_text="URL of this product on the Promallshop website. Used by the BUY NOW button on Today's Deal.",
-    )
-    image = models.ImageField(
-        upload_to="products/",
-        blank=True,
-        null=True,
-        help_text="Recommended size: 800 x 800 px. Product main image.",
-    )
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Product price (optional).",
-    )
-    description = models.TextField(
-        blank=True,
-        help_text="Product description.",
-    )
-    # Admin-controlled editorial fields ─────────────────────────
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Show this product on the site.",
-    )
-    is_special = models.BooleanField(
-        default=False,
-        help_text="Mark this product as a Special product (admin-controlled, never set by sync).",
-        verbose_name="Is Special",
-    )
-    is_hot = models.BooleanField(
-        default=False,
-        help_text="Mark this product as a Hot product (admin-controlled, never set by sync).",
-        verbose_name="Is Hot",
-    )
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order in listings. Lower numbers appear first.",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['display_order', 'name']
-        verbose_name = "Product"
-        verbose_name_plural = "Products"
-
-    def __str__(self):
-        return self.name
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            from django.utils.text import slugify
-            base = slugify(self.name)
-            slug = base
-            n = 1
-            while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base}-{n}"
-                n += 1
-            self.slug = slug
-        super().save(*args, **kwargs)
-
-
 class Entity(models.Model):
     """
     Represents a website/organization that owns homepage content.
@@ -140,10 +55,6 @@ class Entity(models.Model):
     @property
     def event_count(self):
         return self.events.count()
-
-    # @property
-    # def gif_count(self):
-    #     return self.gifs.count()
 
     @property
     def flash_sale_count(self):
@@ -195,7 +106,6 @@ class Entity(models.Model):
         """Total count of all content across all models for this entity"""
         return (
             self.banner_count +
-            # self.gif_count +
             self.flash_sale_count +
             self.today_deal_count +
             self.affiliate_banner_count +
@@ -347,9 +257,10 @@ class Banner(PublishableMixin):
 
     entity = models.ForeignKey(
         Entity,
-        related_name="banners",
         on_delete=models.CASCADE,
-        help_text="Entity this banner belongs to.",
+        related_name="banners",
+        help_text="Select one or more entities this banner belongs to.",
+        verbose_name="Entity",
     )
 
     title = models.CharField(
@@ -414,70 +325,13 @@ class Banner(PublishableMixin):
 
         indexes = [
             models.Index(
-                fields=["entity", "is_active", "display_order"]
+                fields=["is_active", "display_order"]
             ),
         ]
 
     def __str__(self):
-        return f"{self.title} - {self.entity.name}"
+     return self.title
 
-
-# ============================================================
-# HOMEPAGE GIF
-# ============================================================
-
-# class HomepageGif(PublishableMixin):
-
-#     entity = models.ForeignKey(
-#         Entity,
-#         related_name="gifs",
-#         on_delete=models.CASCADE,
-#         help_text="Entity this GIF belongs to.",
-#     )
-
-#     title = models.CharField(
-#         max_length=200,
-#         help_text="Internal name or label for this GIF.",
-#     )
-
-#     description = models.TextField(
-#         blank=True,
-#         help_text="Optional description shown with the GIF.",
-#     )
-
-#     media_file = models.FileField(
-#         upload_to="gifs/",
-#         validators=[
-#             FileExtensionValidator(
-#                 allowed_extensions=["gif"]
-#             )
-#         ],
-#         help_text="Recommended max width: 1200px, keep file size under 1MB",
-#     )
-
-#     link = models.URLField(
-#         blank=True,
-#         help_text="Optional destination URL when the GIF is clicked.",
-#     )
-
-#     display_order = models.PositiveIntegerField(
-#         default=0,
-#         help_text="Display order on the homepage. Lower numbers appear first.",
-#     )
-
-#     class Meta:
-#         ordering = ["display_order", "-created_at"]
-#         verbose_name = "Homepage GIF"
-#         verbose_name_plural = "Homepage GIFs"
-
-#         indexes = [
-#             models.Index(
-#                 fields=["entity", "is_active", "display_order"]
-#             ),
-#         ]
-
-#     def __str__(self):
-#         return f"{self.title} - {self.entity.name}"
 
 
 # ============================================================
@@ -546,11 +400,9 @@ class TodayDeal(ScheduledMixin):
         help_text="Entity this deal belongs to.",
     )
 
-    product = models.ForeignKey(
-        'Product',
-        on_delete=models.CASCADE,
-        related_name='today_deals',
-        help_text="Select the product. The 'BUY NOW' button will navigate to this product.",
+    buy_now_url = models.URLField(
+        max_length=500,
+        help_text="Full link the 'BUY NOW' button opens, e.g. https://www.promallshop.com/product/Yealink-VP59-Flagship-Smart-Video-IP-Phone-1043.html",
     )
 
     title = models.CharField(
@@ -591,57 +443,8 @@ class TodayDeal(ScheduledMixin):
         ]
 
     def __str__(self):
-        entity_name = self.entity.name if self.entity else "No Entity"
-        product_name = self.product.name if self.product else "No Product"
-        return f"{self.title} - {entity_name} → {product_name}"
-
-
-# ============================================================
-# PRODUCT FAQ
-# ============================================================
-
-class ProductFAQ(models.Model):
-    """
-    A single FAQ entry for a Product.
-    One Product → many ProductFAQ records.
-    """
-
-    product = models.ForeignKey(
-        Product,
-        related_name="faqs",
-        on_delete=models.CASCADE,
-        help_text="The product this FAQ belongs to.",
-    )
-
-    question = models.CharField(
-        max_length=500,
-        help_text="The FAQ question.",
-    )
-
-    answer = models.TextField(
-        help_text="The FAQ answer.",
-    )
-
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Lower numbers appear first.",
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Show this FAQ on the site.",
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["display_order", "created_at"]
-        verbose_name = "Product FAQ"
-        verbose_name_plural = "Product FAQs"
-
-    def __str__(self):
-        return f"FAQ for '{self.product.name}': {self.question[:60]}"
+        entity_name = self.entity.name if self.entity_id else "No Entity"
+        return f"{self.title} - {entity_name}"
 
 
 # ============================================================
@@ -1548,3 +1351,415 @@ class TechnologyPartner(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.entity.name})"
+
+
+# ============================================================
+# PROMALLSHOP CATALOG
+# ============================================================
+
+
+class PromallCategory(models.Model):
+    """
+    A product category synced from the Promall API or created by admin.
+    """
+
+    external_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='External category ID from the Promall API. Null for admin-created categories.',
+    )
+
+    name = models.CharField(
+        max_length=300,
+        help_text='Category display name.',
+    )
+
+    slug = models.SlugField(
+        max_length=300,
+        db_index=True,
+        help_text='URL-friendly identifier. Not globally unique — the same slug may appear in multiple categories.',
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text='Rich text HTML category description. # TODO: replace with CKEditorField once django-ckeditor-5 is installed.',
+    )
+
+    icon = models.ImageField(
+        upload_to='promall/categories/',
+        blank=True,
+        null=True,
+        help_text='Admin-uploaded icon only. Synced categories do not use this field. Recommended size: TBC.',
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text='Lower numbers appear first.',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Uncheck to hide this category without deleting it.',
+    )
+
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name='promall_categories',
+        help_text='Must be the Promallshop entity.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        verbose_name = 'Promall Category'
+        verbose_name_plural = 'Promall Categories'
+
+    def __str__(self):
+        return self.name
+
+
+class PromallCategoryFAQ(models.Model):
+    """
+    A FAQ entry belonging to a PromallCategory.
+    """
+
+    category = models.ForeignKey(
+        PromallCategory,
+        related_name='faqs',
+        on_delete=models.CASCADE,
+        help_text='Category this FAQ belongs to.',
+    )
+
+    question = models.CharField(
+        max_length=500,
+        help_text='FAQ question text.',
+    )
+
+    answer = models.TextField(
+        help_text='Rich text HTML answer. # TODO: replace with CKEditorField once django-ckeditor-5 is installed.',
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text='Lower numbers appear first.',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Uncheck to hide this FAQ.',
+    )
+
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name='promall_category_faqs',
+        help_text='Must be the Promallshop entity.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'created_at']
+        verbose_name = 'Promall Category FAQ'
+
+    def __str__(self):
+        return f'{self.question[:80]} ({self.category.name})'
+
+
+class PromallSubcategory(models.Model):
+    """
+    A product subcategory synced from the Promall API or created by admin.
+    """
+
+    external_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='External subcategory ID from the Promall API. Null for admin-created subcategories.',
+    )
+
+    category = models.ForeignKey(
+        PromallCategory,
+        related_name='subcategories',
+        on_delete=models.CASCADE,
+        help_text='Parent category for this subcategory.',
+    )
+
+    name = models.CharField(
+        max_length=300,
+        help_text='Subcategory display name.',
+    )
+
+    slug = models.SlugField(
+        max_length=300,
+        db_index=True,
+        help_text='URL-friendly identifier. Unique within its parent category only.',
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text='Lower numbers appear first.',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Uncheck to hide this subcategory.',
+    )
+
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name='promall_subcategories',
+        help_text='Must be the Promallshop entity.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        unique_together = [('category', 'slug')]
+        verbose_name = 'Promall Subcategory'
+        verbose_name_plural = 'Promall Subcategories'
+
+    def __str__(self):
+        return f'{self.category.name} > {self.name}'
+
+
+class PromallProduct(models.Model):
+    """
+    A product synced from the Promall API or created by admin.
+    """
+
+    external_id = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text='External product ID from the Promall API. Null for admin-created products.',
+    )
+
+    category = models.ForeignKey(
+        PromallCategory,
+        related_name='products',
+        on_delete=models.CASCADE,
+        help_text='Category this product belongs to.',
+    )
+
+    subcategory = models.ForeignKey(
+        PromallSubcategory,
+        related_name='products',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Subcategory this product belongs to. Optional.',
+    )
+
+    name = models.CharField(
+        max_length=500,
+        help_text='Product display name.',
+    )
+
+    slug = models.SlugField(
+        max_length=500,
+        unique=True,
+        help_text='URL-friendly product identifier. Must be unique across all products.',
+    )
+
+    short_description = models.TextField(
+        blank=True,
+        help_text='Short product description shown on listing cards.',
+    )
+
+    description = models.TextField(
+        blank=True,
+        help_text='Rich text HTML full product description. # TODO: replace with CKEditorField once django-ckeditor-5 is installed.',
+    )
+
+    model_number = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Product model number.',
+    )
+
+    part_number = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Product part number.',
+    )
+
+    warranty = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Warranty information.',
+    )
+
+    video_url = models.URLField(
+        blank=True,
+        help_text='URL of a product demo or overview video.',
+    )
+
+    price = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Retail price. Refreshed on every sync.',
+    )
+
+    end_user_price = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='End-user price. Refreshed on every sync.',
+    )
+
+    discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Discount value. Refreshed on every sync.',
+    )
+
+    quantity = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='Stock quantity. Refreshed on every sync.',
+    )
+
+    image = models.ImageField(
+        upload_to='promall/products/',
+        blank=True,
+        null=True,
+        help_text='Admin-uploaded image only. For synced products the image comes from external_image_paths. Recommended size: TBC.',
+    )
+
+    external_image_paths = models.TextField(
+        blank=True,
+        help_text='Comma-separated relative image paths received from the Promall API. Read-only — never edit manually.',
+    )
+
+    is_hot = models.BooleanField(
+        default=False,
+        help_text='Mark as Hot/Flash-sale product. Set automatically on first sync (tag=="hot"); editable by admin thereafter.',
+    )
+
+    is_special = models.BooleanField(
+        default=False,
+        help_text='Mark as Special/Featured product. Set automatically on first sync (tag=="special"); editable by admin thereafter.',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Uncheck to hide this product. Set to False automatically if show_on_promall != "yes" in the API.',
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text='Lower numbers appear first.',
+    )
+
+    alternative_product_ids = models.TextField(
+        blank=True,
+        help_text='JSON string of alternative product external IDs, e.g. ["123","456"]. From API, read-only.',
+    )
+
+    complementary_product_ids = models.TextField(
+        blank=True,
+        help_text='JSON string of complementary product external IDs. From API, read-only.',
+    )
+
+    meta_title = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text='SEO meta title. Parsed from SKU on first sync.',
+    )
+
+    meta_description = models.TextField(
+        blank=True,
+        help_text='SEO meta description. Parsed from SKU on first sync.',
+    )
+
+    keywords = models.TextField(
+        blank=True,
+        help_text='SEO keywords. Parsed from SKU on first sync.',
+    )
+
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name='promall_products',
+        help_text='Must be the Promallshop entity.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'name']
+        verbose_name = 'Promall Product'
+        verbose_name_plural = 'Promall Products'
+
+    def __str__(self):
+        return f'{self.name} ({self.external_id or "admin-created"})'
+
+
+class PromallProductFAQ(models.Model):
+    """
+    A FAQ entry belonging to a PromallProduct.
+    """
+
+    product = models.ForeignKey(
+        PromallProduct,
+        related_name='faqs',
+        on_delete=models.CASCADE,
+        help_text='Product this FAQ belongs to.',
+    )
+
+    question = models.CharField(
+        max_length=500,
+        help_text='FAQ question text.',
+    )
+
+    answer = models.TextField(
+        help_text='Rich text HTML answer. # TODO: replace with CKEditorField once django-ckeditor-5 is installed.',
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text='Lower numbers appear first.',
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Uncheck to hide this FAQ.',
+    )
+
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name='promall_product_faqs',
+        help_text='Must be the Promallshop entity.',
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['display_order', 'created_at']
+        verbose_name = 'Promall Product FAQ'
+
+    def __str__(self):
+        return f'{self.question[:80]} ({self.product.name})'
