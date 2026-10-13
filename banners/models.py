@@ -1890,3 +1890,27 @@ class PromallEvent(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# ============================================================
+# PROMALLSHOP CATEGORY GIFS
+# ============================================================
+
+class PromallCategoryGIF(models.Model):
+    category_id = models.PositiveIntegerField(
+        unique=True,
+        help_text="Category ID from the live Promall API.",
+    )
+    category_name = models.CharField(max_length=255)
+    gif = models.FileField(upload_to="promall/category-gifs/")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Promall Category GIF"
+        verbose_name_plural = "Promall Category GIFs"
+        ordering = ["category_name"]
+
+    def __str__(self):
+        return f"{self.category_name} (ID {self.category_id})"

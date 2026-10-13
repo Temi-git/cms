@@ -1277,3 +1277,42 @@ class PromallEventAdmin(admin.ModelAdmin):
 for model in (PromallCategory, PromallSubcategory, PromallProduct):
     if admin.site.is_registered(model):
         admin.site.unregister(model)
+
+
+# ============================================================
+# PROMALLSHOP CATEGORY GIF ADMIN
+# ============================================================
+
+from .models import PromallCategoryGIF
+from .promall_category_gif_forms import PromallCategoryGIFForm
+
+
+@admin.register(PromallCategoryGIF)
+class PromallCategoryGIFAdmin(admin.ModelAdmin):
+    form = PromallCategoryGIFForm
+
+    list_display = (
+        "category_name",
+        "category_id",
+        "is_active",
+        "updated_at",
+    )
+
+    search_fields = ("category_name", "category_id")
+    list_filter = ("is_active",)
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        ("Category", {
+            "fields": ("category_id",),
+        }),
+        ("GIF and Destination", {
+            "fields": ("gif",),
+        }),
+        ("Visibility", {
+            "fields": ("is_active",),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+        }),
+    )
