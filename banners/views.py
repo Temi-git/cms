@@ -368,8 +368,10 @@ def proxy_combined_api(request, slug):
     factory = APIRequestFactory()
 
     internal_request = factory.get(
-        request.get_full_path(),
-        request.GET,
+        request.path,
+        data=request.GET,
+        HTTP_HOST=request.get_host(),
+        secure=request.is_secure(),
     )
 
     force_authenticate(

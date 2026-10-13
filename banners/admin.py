@@ -1304,20 +1304,21 @@ class PromallCategoryGIFAdmin(admin.ModelAdmin):
     list_display = (
         "category_name",
         "category_id",
+        "gif_preview",
         "is_active",
         "updated_at",
     )
 
     search_fields = ("category_name", "category_id")
     list_filter = ("is_active",)
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("gif_preview", "created_at", "updated_at")
 
     fieldsets = (
         ("Category", {
             "fields": ("category_id",),
         }),
-        ("GIF and Destination", {
-            "fields": ("gif",),
+        ("GIF", {
+            "fields": ("gif", "gif_preview"),
         }),
         ("Visibility", {
             "fields": ("is_active",),
@@ -1326,3 +1327,16 @@ class PromallCategoryGIFAdmin(admin.ModelAdmin):
             "fields": ("created_at", "updated_at"),
         }),
     )
+
+
+    @admin.display(description="GIF Preview")
+    def gif_preview(self, obj):
+        if not obj or not obj.pk or not obj.gif:
+            return "No GIF uploaded yet"
+
+        return format_html(
+            '<img src="{}" alt="Category GIF" '
+            'style="max-width:280px; max-height:180px; '
+            'object-fit:contain; border-radius:6px;" />',
+            obj.gif.url,
+        )
