@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<h1>Live Promall Subcategories</h1>
+
+<p>Subcategories fetched directly from the Promall API.</p>
+
+<form method="get" style="margin-bottom:20px;">
+    <input
+        type="text"
+        name="q"
+        value="{{ query }}"
+        placeholder="Search subcategories..."
+        style="padding:10px;width:300px;"
+    >
+    <button type="submit" class="button">Search</button>
+</form>
+
+<table style="width:100%;border-collapse:collapse;">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Subcategory Name</th>
+            <th>Parent Category</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for subcategory in subcategories %}
+        <tr>
+            <td>{{ subcategory.id }}</td>
+            <td><strong>{{ subcategory.name }}</strong></td>
+            <td>{{ subcategory.parent_category_name }}</td>
+            <td>
+                {% if subcategory.active %}
+                    Active
+                {% else %}
+                    Inactive
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'promall_live_edit_subcategory' subcategory.id %}" class="button">Edit</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No subcategories found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

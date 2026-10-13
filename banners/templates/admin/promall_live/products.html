@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>Live Promall Products</h1>
+
+<p>Products are fetched directly from the Promall API. Nothing is imported into the Django database.</p>
+
+<form method="get" style="margin: 20px 0;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by name, ID or SKU" style="padding: 10px; width: 300px;">
+    <button type="submit" class="button">Search</button>
+    <a href="{% url 'promall_live_products' %}" class="button">Refresh / Clear</a>
+</form>
+
+<p><strong>{{ products|length }} products displayed</strong></p>
+
+<table style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Description</th>
+            <th>FAQ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td><a href="{% url 'promall_live_edit_product' product.id %}">{{ product.name }}</a></td>
+            <td>{{ product.category_name }}</td>
+            <td>{{ product.price }}</td>
+            <td>{% if product.description %}Yes{% else %}No{% endif %}</td>
+            <td>{% if product.faq %}Yes{% else %}No{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">No products found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<p>
+    <a href="{% url 'promall_live_products' %}">&larr; Back to live products</a>
+</p>
+
+<h2>{{ product.name }}</h2>
+
+<p>
+    <strong>Product ID:</strong> {{ product.id }} |
+    <strong>SKU:</strong> {{ product.sku }}
+</p>
+
+<p>
+    Only the three description fields can be edited.
+    Product creation, deletion and FAQ saving are disabled.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% for field in form %}
+        <div style="margin-bottom:24px;">
+            <label for="{{ field.id_for_label }}">
+                <strong>{{ field.label }}</strong>
+            </label>
+            <div>{{ field }}</div>
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+
+    <div class="submit-row">
+        <input type="submit" value="Save Changes" class="default">
+    </div>
+
+<h3>Product FAQs</h3>
+<p>Edit existing questions and answers, or add new FAQs.</p>
+
+<div id="faq-container">
+    {% for faq in faqs %}
+    <div class="faq-item" style="border:1px solid #ddd; padding:15px; margin-bottom:15px;">
+        <h4>FAQ</h4>
+
+        <label>Question</label>
+        <textarea class="faq-question" rows="2" style="width:100%;">{{ faq.question }}</textarea>
+
+        <label>Answer</label>
+        <textarea class="faq-answer" rows="4" style="width:100%;">{{ faq.answer }}</textarea>
+
+        <button type="button" class="button remove-faq">Remove FAQ</button>
+    </div>
+    {% endfor %}
+</div>
+
+<input type="hidden" id="faq-count" name="faq_count" value="0">
+
+<button type="button" id="add-faq" class="button">+ Add FAQ</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById("faq-container");
+    const addButton = document.getElementById("add-faq");
+    const countInput = document.getElementById("faq-count");
+    const form = container.closest("form");
+
+    function addFaq(question = "", answer = "") {
+        const item = document.createElement("div");
+        item.className = "faq-item";
+        item.style.cssText = "border:1px solid #ddd;padding:15px;margin-bottom:15px;";
+
+        const heading = document.createElement("h4");
+        heading.textContent = "FAQ";
+
+        const questionLabel = document.createElement("label");
+        questionLabel.textContent = "Question";
+
+        const questionInput = document.createElement("textarea");
+        questionInput.className = "faq-question";
+        questionInput.rows = 2;
+        questionInput.style.width = "100%";
+        questionInput.value = question;
+
+        const answerLabel = document.createElement("label");
+        answerLabel.textContent = "Answer";
+
+        const answerInput = document.createElement("textarea");
+        answerInput.className = "faq-answer";
+        answerInput.rows = 4;
+        answerInput.style.width = "100%";
+        answerInput.value = answer;
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "button";
+        removeButton.textContent = "Remove FAQ";
+        removeButton.addEventListener("click", () => item.remove());
+
+        item.append(
+            heading, questionLabel, questionInput,
+            answerLabel, answerInput, removeButton
+        );
+
+        container.appendChild(item);
+    }
+
+    addButton.addEventListener("click", () => addFaq());
+
+    form.addEventListener("submit", function () {
+        const items = container.querySelectorAll(".faq-item");
+
+        items.forEach((item, index) => {
+            item.querySelector(".faq-question").name = "faq_question_" + index;
+            item.querySelector(".faq-answer").name = "faq_answer_" + index;
+        });
+
+        countInput.value = items.length;
+    });
+});
+</script>
+
+</form>
+
+{% endblock %}
+
+
+{% block extrahead %}
+<!-- PROMALL PRODUCT MULTISELECT -->
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css"
+>
+
+<style>
+.promall-product-select .ts-control {
+    min-height: 44px;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #aaa;
+}
+
+.promall-product-select .ts-control .item {
+    background: #e8f0fe;
+    color: #17365d;
+    border: 1px solid #c5d8fa;
+    border-radius: 5px;
+    padding: 5px 8px;
+    margin: 3px;
+}
+
+.promall-product-select .ts-dropdown {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.promall-product-select .ts-dropdown .option {
+    padding: 10px;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof TomSelect === "undefined") {
+        console.error("Tom Select could not load.");
+        return;
+    }
+
+    const selectors = [
+        "#id_alternative_products",
+        "#id_complementary_products"
+    ];
+
+    selectors.forEach(function (selector) {
+        const element = document.querySelector(selector);
+
+        if (!element || element.tomselect) {
+            return;
+        }
+
+        new TomSelect(element, {
+            plugins: ["remove_button"],
+            maxItems: null,
+            create: false,
+            persist: false,
+            hideSelected: true,
+            closeAfterSelect: false,
+            placeholder: "Search and select products...",
+            searchField: ["text"],
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            render: {
+                no_results: function () {
+                    return '<div class="no-results" style="padding:10px;">No matching products found</div>';
+                }
+            }
+        });
+
+        element.tomselect.wrapper.classList.add("promall-product-select");
+    });
+});
+</script>
+
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof tinymce === "undefined") {
+        console.error("TinyMCE could not load.");
+        return;
+    }
+
+    tinymce.init({
+        selector: "#id_description, #id_more_information",
+        license_key: "gpl",
+        height: 400,
+        menubar: false,
+        plugins: "lists link code",
+        toolbar: "undo redo | blocks | bold italic | bullist numlist | link | removeformat | code",
+        branding: false,
+        promotion: false,
+        convert_urls: false
+    });
+});
+</script>
+
+<!-- PROMALL SUBCATEGORY FILTER -->
+{{ subcategory_options|json_script:"promall-subcategory-data" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const categorySelect = document.getElementById("id_category_id");
+    const subcategorySelect = document.getElementById("id_subcategory_id");
+    const dataElement = document.getElementById("promall-subcategory-data");
+
+    if (!categorySelect || !subcategorySelect || !dataElement) {
+        return;
+    }
+
+    const subcategories = JSON.parse(dataElement.textContent);
+    const originalSubcategory = subcategorySelect.value;
+
+    function updateSubcategories(preserveSelection) {
+        const categoryId = categorySelect.value;
+        const selectedId = preserveSelection
+            ? subcategorySelect.value
+            : "";
+
+        subcategorySelect.innerHTML = "";
+
+        const emptyOption = new Option("No Subcategory", "");
+        subcategorySelect.add(emptyOption);
+
+        subcategories
+            .filter(item => String(item.category_id) === String(categoryId))
+            .forEach(item => {
+                subcategorySelect.add(
+                    new Option(item.name, item.id)
+                );
+            });
+
+        if (
+            selectedId &&
+            Array.from(subcategorySelect.options).some(
+                option => option.value === selectedId
+            )
+        ) {
+            subcategorySelect.value = selectedId;
+        } else {
+            subcategorySelect.value = "";
+        }
+    }
+
+    subcategorySelect.value = originalSubcategory;
+    updateSubcategories(true);
+
+    categorySelect.addEventListener("change", function () {
+        updateSubcategories(false);
+    });
+});
+</script>
+
+{% endblock %}

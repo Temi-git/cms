@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 
 from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import models
 from django.http import JsonResponse
 from django.utils import timezone
@@ -23,11 +24,9 @@ from .models import (
     Entity,
     Banner,
     UpcomingEvent,
-    # HomepageGif,
     FlashSale,
     AffiliateBanner,
     TodayDeal,
-    Product,
     ThingWeDo,
     CybersecuritySolution,
     Project,
@@ -40,6 +39,12 @@ from .models import (
     CaseStudyResultROI,
     EventMedia,
     TechnologyPartner,
+    PromallCategory,
+    PromallSubcategory,
+    PromallProduct,
+    PromallBanner,
+    PromallEventType,
+    PromallEvent,
 )
 
 from .serializers import (
@@ -60,8 +65,15 @@ from .serializers import (
     serialize_case_study_list,
     serialize_case_study_detail,
     serialize_technology_partner,
-    serialize_product,
     _slugify_value,
+    serialize_promall_category,
+    serialize_promall_category_detail,
+    serialize_promall_subcategory,
+    serialize_promall_product_list,
+    serialize_promall_product_detail,
+    serialize_promall_banner,
+    serialize_promall_event,
+    serialize_promall_event_type,
 )
 
 
@@ -566,7 +578,15 @@ def get_combined_api(request, slug):
     """
     GET /api/combined/<slug>/
 
-    Returns the complete homepage payload.
+    Returns the complete homepage payload, branched by entity slug.
+
+    * slug == 'promallshop'   → Promallshop-specific models
+                                (PromallBanner, PromallEvent, PromallEventType,
+                                 PromallCategory, AffiliateBanner with is_active-only filter)
+    * any other slug          → generic CMS models
+                                (Banner, UpcomingEvent, existing serializers)
+
+    The public proxy at /proxy/combined/<slug>/ forwards here unchanged.
     """
 
     if request.method == "OPTIONS":
@@ -581,95 +601,28 @@ def get_combined_api(request, slug):
             slug=slug,
             is_active=True,
         )
-
     except Entity.DoesNotExist:
         return _cors_json_response(
             {
                 "status": "error",
-                "message": (
-                    f"Entity '{slug}' not found or inactive"
-                ),
+                "message": f"Entity '{slug}' not found or inactive",
             },
             status=404,
         )
 
     # --------------------------------------------------------
-    # BANNERS
-    # --------------------------------------------------------
-
-    banners = filter_publishable(
-        entity.banners.all()
-    ).order_by(
-        "display_order",
-        "-created_at",
-    )
-
-    # --------------------------------------------------------
-    # FLASH SALES
-    # --------------------------------------------------------
-
-    flash_sales = entity.flash_sales.filter(
-    is_active=True,
-    end_datetime__gte=timezone.now(),
-).order_by(
-    "display_order",
-    "start_datetime",
-    "-created_at",
-)
-
-    # --------------------------------------------------------
-    # AFFILIATE BANNERS
-    # --------------------------------------------------------
-
-    affiliate_banners = filter_publishable(
-        entity.affiliate_banners.all()
-    ).order_by(
-        "display_order",
-        "-created_at",
-    )
-
-    # --------------------------------------------------------
-    # EVENTS
-    # --------------------------------------------------------
-
-    events = filter_publishable(
-        entity.events.all()
-    ).order_by(
-        "event_date",
-    )
-
-    # --------------------------------------------------------
-    # EVENT DATE FILTERS
+    # PARSE DATE FILTERS (shared by both branches for events)
     # --------------------------------------------------------
 
     from_date = request.GET.get("from")
     to_date = request.GET.get("to")
 
     try:
-        from_dt = (
-            _parse_date_param(
-                from_date,
-                "from",
-            )
-            if from_date
-            else None
-        )
-
-        to_dt = (
-            _parse_date_param(
-                to_date,
-                "to",
-            )
-            if to_date
-            else None
-        )
-
+        from_dt = _parse_date_param(from_date, "from") if from_date else None
+        to_dt = _parse_date_param(to_date, "to") if to_date else None
     except ValueError as exc:
         return _cors_json_response(
-            {
-                "status": "error",
-                "message": str(exc),
-            },
+            {"status": "error", "message": str(exc)},
             status=400,
         )
 
@@ -677,64 +630,262 @@ def get_combined_api(request, slug):
         return _cors_json_response(
             {
                 "status": "error",
-                "message": (
-                    '"from" date cannot be after '
-                    '"to" date'
-                ),
+                "message": '"from" date cannot be after "to" date',
             },
             status=400,
         )
 
-    if from_dt:
-        events = events.filter(
-            event_date__gte=from_dt
-        )
-
+    # Build end-of-day ceiling for the to_dt boundary
+    to_dt_end = None
     if to_dt:
         to_dt_end = to_dt.replace(
-            hour=23,
-            minute=59,
-            second=59,
-            microsecond=999999,
+            hour=23, minute=59, second=59, microsecond=999999
         )
 
-        events = events.filter(
-            event_date__lte=to_dt_end
+    # ====================================================
+    # PROMALLSHOP BRANCH
+    # ====================================================
+
+    if slug == "promallshop":
+        return _combined_promallshop(request, entity, from_dt, to_dt_end)
+
+    # ====================================================
+    # GENERIC / PROXYNETGROUP BRANCH
+    # ====================================================
+
+    return _combined_generic(request, entity, from_dt, to_dt_end)
+
+
+# ============================================================
+# COMBINED API — PROMALLSHOP BRANCH
+# ============================================================
+
+def _combined_promallshop(request, entity, from_dt, to_dt_end):
+    """
+    Build the combined homepage payload for Promallshop.
+
+    Main banners:    PromallBanner  (not the generic Banner model)
+    Events:          PromallEvent   (uses event_datetime, not event_date)
+    Event types:     PromallEventType
+    Categories:      PromallCategory (filtered to this entity, is_active=True)
+    Affiliate banners: AffiliateBanner filtered by is_active=True only —
+                       no publish_start/publish_end window, because Promallshop
+                       uses simple on/off control for these banners.
+    Flash sales, today deals, etc.: filtered to this entity as usual.
+    """
+
+    now = timezone.now()
+
+    # --------------------------------------------------------
+    # PROMALLSHOP MAIN BANNERS
+    # PromallBanner, not Banner. Simple is_active filter only.
+    # --------------------------------------------------------
+
+    promall_banners = (
+        PromallBanner.objects.filter(
+            entity=entity,
+            is_active=True,
         )
+        .order_by("display_order", "-created_at")
+    )
+
+    # --------------------------------------------------------
+    # AFFILIATE BANNERS — is_active only (no publish window)
+    # The publish_start/publish_end on AffiliateBanner records for
+    # Promallshop represent scheduled launch dates set by admins; using
+    # filter_publishable() here would incorrectly hide banners whose
+    # publish_start is in the future even though is_active=True.
+    # Promallshop uses the is_active flag as the sole on/off switch.
+    # --------------------------------------------------------
+
+    affiliate_banners = (
+        entity.affiliate_banners
+        .filter(is_active=True)
+        .order_by("display_order", "-created_at")
+    )
+
+    # --------------------------------------------------------
+    # FLASH SALES (entity-scoped, active + not yet ended)
+    # --------------------------------------------------------
+
+    flash_sales = entity.flash_sales.filter(
+        is_active=True,
+        end_datetime__gte=now,
+    ).order_by("display_order", "start_datetime", "-created_at")
+
     # --------------------------------------------------------
     # TODAY DEALS
     # --------------------------------------------------------
 
     today_deals = filter_scheduled(
         entity.today_deals.all()
-    ).order_by(
-        "display_order",
-        "-created_at",
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # PROMALLSHOP EVENTS (PromallEvent, not UpcomingEvent)
+    # Filter by event_datetime against from_dt / to_dt_end.
+    # --------------------------------------------------------
+
+    promall_events = (
+        PromallEvent.objects.filter(
+            entity=entity,
+            is_active=True,
+        )
+        .select_related("event_type")
+        .order_by("event_datetime", "display_order")
     )
 
-    # today_deals_list = []
+    if from_dt:
+        promall_events = promall_events.filter(event_datetime__gte=from_dt)
 
-    # for deal in today_deals:
-    #     today_deals_list.append({
-    #         "id": deal.id,
-    #         "title": deal.title or "",
-    #         "subtitle": deal.subtitle or "",
-    #         "image": build_media_url(request, deal.image),
-    #         "product_id": deal.product.id if deal.product else None,
-    #         "display_order": deal.display_order,
-    #         "start_datetime": (
-    #             deal.start_datetime.isoformat()
-    #             if deal.start_datetime
-    #             else ""
-    #         ),
-    #         "end_datetime": (
-    #             deal.end_datetime.isoformat()
-    #             if deal.end_datetime
-    #             else ""
-    #         ),
-    #         "is_live": deal.is_currently_visible(),
-    #         "seconds_remaining": deal.seconds_remaining,
-    #     })
+    if to_dt_end:
+        promall_events = promall_events.filter(event_datetime__lte=to_dt_end)
+
+    # --------------------------------------------------------
+    # PROMALLSHOP EVENT TYPES
+    # --------------------------------------------------------
+
+    event_types = PromallEventType.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).order_by("display_order", "name")
+
+    # --------------------------------------------------------
+    # PROMALLSHOP CATEGORIES
+    # subcategories are pre-filtered to is_active=True inside
+    # serialize_promall_category already.
+    # --------------------------------------------------------
+
+    categories = (
+        PromallCategory.objects.filter(
+            entity=entity,
+            is_active=True,
+        )
+        .prefetch_related("subcategories")
+        .order_by("display_order", "name")
+    )
+
+    # --------------------------------------------------------
+    # RESPONSE
+    # --------------------------------------------------------
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "url": entity.url,
+
+            # Promallshop-specific main banners (PromallBanner model)
+            "banners": [
+                serialize_promall_banner(request, item)
+                for item in promall_banners
+            ],
+
+            "flash_sales": [
+                serialize_flash_sale(request, item)
+                for item in flash_sales
+            ],
+
+            # All active Promallshop affiliate banners regardless of publish window
+            "affiliate_banners": [
+                serialize_affiliate_banner(request, item)
+                for item in affiliate_banners
+            ],
+
+            # Promallshop events (PromallEvent, uses event_datetime)
+            "upcoming_events": [
+                serialize_promall_event(request, item)
+                for item in promall_events
+            ],
+
+            # Promallshop event type catalogue
+            "event_types": [
+                serialize_promall_event_type(item)
+                for item in event_types
+            ],
+
+            # Promallshop product categories
+            "categories": [
+                serialize_promall_category(request, item)
+                for item in categories
+            ],
+
+            "today_deals": [
+                serialize_today_deal(request, item)
+                for item in today_deals
+            ],
+        },
+        status=200,
+    )
+
+
+# ============================================================
+# COMBINED API — GENERIC / PROXYNETGROUP BRANCH
+# ============================================================
+
+def _combined_generic(request, entity, from_dt, to_dt_end):
+    """
+    Build the combined homepage payload for Proxynetgroup (and any other
+    non-Promallshop entity).
+
+    Uses the original generic CMS models:
+      - Banner (not PromallBanner)
+      - UpcomingEvent with event_date (not PromallEvent)
+      - serialize_event (not serialize_promall_event)
+
+    All existing serializer fields and response keys are preserved
+    exactly as before so the Proxynetgroup frontend is unaffected.
+    """
+
+    now = timezone.now()
+
+    # --------------------------------------------------------
+    # BANNERS (generic Banner model via entity FK)
+    # --------------------------------------------------------
+
+    banners = filter_publishable(
+        entity.banners.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # FLASH SALES
+    # --------------------------------------------------------
+
+    flash_sales = entity.flash_sales.filter(
+        is_active=True,
+        end_datetime__gte=now,
+    ).order_by("display_order", "start_datetime", "-created_at")
+
+    # --------------------------------------------------------
+    # AFFILIATE BANNERS (publish-window filtered, existing behavior)
+    # --------------------------------------------------------
+
+    affiliate_banners = filter_publishable(
+        entity.affiliate_banners.all()
+    ).order_by("display_order", "-created_at")
+
+    # --------------------------------------------------------
+    # EVENTS (generic UpcomingEvent, filters on event_date)
+    # --------------------------------------------------------
+
+    events = filter_publishable(
+        entity.events.all()
+    ).order_by("event_date")
+
+    if from_dt:
+        events = events.filter(event_date__gte=from_dt)
+
+    if to_dt_end:
+        events = events.filter(event_date__lte=to_dt_end)
+
+    # --------------------------------------------------------
+    # TODAY DEALS
+    # --------------------------------------------------------
+
+    today_deals = filter_scheduled(
+        entity.today_deals.all()
+    ).order_by("display_order", "-created_at")
 
     # --------------------------------------------------------
     # THINGS WE DO
@@ -802,7 +953,7 @@ def get_combined_api(request, slug):
     ).order_by("display_order", "id")
 
     # --------------------------------------------------------
-    # RESPONSE
+    # RESPONSE — preserves all existing keys exactly
     # --------------------------------------------------------
 
     return _cors_json_response(
@@ -817,11 +968,6 @@ def get_combined_api(request, slug):
                 for item in banners
             ],
 
-            # "gifs": [
-            #     serialize_gif(request, item)
-            #     for item in gifs
-            # ],
-
             "flash_sales": [
                 serialize_flash_sale(request, item)
                 for item in flash_sales
@@ -832,20 +978,15 @@ def get_combined_api(request, slug):
                 for item in affiliate_banners
             ],
 
-            # "featured_products": [
-            #     serialize_featured_product(item)
-            #     for item in featured_products
-            # ],
-
             "upcoming_events": [
                 serialize_event(request, item)
                 for item in events
             ],
 
-           "today_deals": [
-    serialize_today_deal(request, item)
-    for item in today_deals
-],
+            "today_deals": [
+                serialize_today_deal(request, item)
+                for item in today_deals
+            ],
 
             "things_we_do": [
                 serialize_thing_we_do(request, item)
@@ -881,7 +1022,8 @@ def get_combined_api(request, slug):
                 serialize_case_study_list(request, item)
                 for item in case_studies
             ],
-             "partners": [
+
+            "partners": [
                 serialize_technology_partner(request, item)
                 for item in technology_partners
             ],
@@ -892,57 +1034,6 @@ def get_combined_api(request, slug):
 
 
 
-# ============================================================
-# PROXY PRODUCT API
-# ============================================================
-
-@api_view(["GET", "OPTIONS"])
-@authentication_classes([])
-@permission_classes([AllowAny])
-def proxy_product_api(request, product_id):
-    """
-    GET /proxy/product/<product_id>/
-    Public proxy for product details.
-    """
-    
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-    
-    return _forward_request(
-        f"/api/product/{product_id}/",
-        request,
-    )
-# ============================================================
-# PRODUCT API
-# ============================================================
-
-@api_view(["GET", "OPTIONS"])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def get_product_api(request, product_id):
-    """
-    GET /api/product/<product_id>/
-    Returns a single product with FAQs.
-    """
-
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-
-    try:
-        product = Product.objects.get(id=product_id, is_active=True)
-    except Product.DoesNotExist:
-        return _cors_json_response(
-            {"status": "error", "message": "Product not found"},
-            status=404,
-        )
-
-    return _cors_json_response(
-        {
-            "status": "success",
-            "product": serialize_product(request, product, include_faqs=True),
-        },
-        status=200,
-    )
 # ============================================================
 # ENTITIES API
 # ============================================================
@@ -980,7 +1071,7 @@ def get_entities_api(request):
         #     entity.gifs.all()
         # ).count()
 
-        
+
 
         active_flash_sale_count = filter_scheduled(
             entity.flash_sales.all()
@@ -994,7 +1085,7 @@ def get_entities_api(request):
 
         active_featured_product_count = 0
 
-        
+
 
         entities_data.append(
             {
@@ -1007,7 +1098,7 @@ def get_entities_api(request):
                 "banner_count": active_banner_count,
                 "event_count": active_event_count,
                 # "gif_count": active_gif_count,
-                
+
                 "flash_sale_count": (
                     active_flash_sale_count
                 ),
@@ -1017,7 +1108,7 @@ def get_entities_api(request):
                 "featured_product_count": (
                     active_featured_product_count
                 ),
-               
+
             }
         )
 
@@ -1735,52 +1826,100 @@ def proxy_partners_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — PRODUCTS LISTING
+
+
+# ============================================================
+# PROMALLSHOP SITE CONTENT APIs
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def get_products_api(request):
-    """
-    GET /api/products/
-
-    Optional query params:
-      ?special=1   — only is_special products
-      ?hot=1       — only is_hot products
-    """
+def get_promall_affiliate_banners_api(request):
     if request.method == "OPTIONS":
         return _cors_json_response({}, status=200)
 
-    qs = Product.objects.filter(is_active=True).order_by("display_order", "name")
+    banners = AffiliateBanner.objects.filter(
+        entity__slug="promallshop",
+        is_active=True,
+    ).order_by("display_order", "-created_at")
 
-    if request.GET.get("special") == "1":
-        qs = qs.filter(is_special=True)
-    if request.GET.get("hot") == "1":
-        qs = qs.filter(is_hot=True)
-
-    return _cors_json_response(
-        {
-            "status": "success",
-            "count": qs.count(),
-            "products": [
-                serialize_product(request, p, include_faqs=False) for p in qs
-            ],
-        },
-        status=200,
-    )
+    return _cors_json_response({
+        "status": "success",
+        "count": banners.count(),
+        "affiliate_banners": [
+            serialize_affiliate_banner(request, banner)
+            for banner in banners
+        ],
+    })
 
 
-# ============================================================
-# PUBLIC PROXY — PRODUCTS LISTING
-# ============================================================
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_events_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    events = PromallEvent.objects.filter(
+        entity__slug="promallshop",
+        is_active=True,
+    ).select_related("event_type").order_by("event_datetime", "display_order")
+
+    results = []
+    for event in events:
+        results.append({
+            "id": event.id,
+            "name": event.name,
+            "description": event.description or "",
+            "event_datetime": event.event_datetime.isoformat() if event.event_datetime else None,
+            "location": event.location or "",
+            "event_type": ({
+                "id": event.event_type.id,
+                "name": event.event_type.name,
+                "slug": event.event_type.slug,
+            } if event.event_type else None),
+            "image": build_media_url(request, event.image),
+            "registration_link": event.registration_link or "",
+            "display_order": event.display_order,
+        })
+
+    return _cors_json_response({
+        "status": "success",
+        "count": len(results),
+        "events": results,
+    })
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_event_types_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    event_types = PromallEventType.objects.filter(
+        entity__slug="promallshop",
+        is_active=True,
+    ).order_by("display_order", "name")
+
+    return _cors_json_response({
+        "status": "success",
+        "count": event_types.count(),
+        "event_types": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "slug": item.slug,
+                "display_order": item.display_order,
+            }
+            for item in event_types
+        ],
+    })
+
 
 @csrf_exempt
-def proxy_products_api(request):
-    """
-    GET /proxy/products/
-    Forwards ?special=1 and ?hot=1 query params as-is.
-    """
+def proxy_promall_affiliate_banners_api(request):
     if request.method == "OPTIONS":
         return _cors_json_response({}, status=200)
     if request.method != "GET":
@@ -1788,4 +1927,435 @@ def proxy_products_api(request):
             {"status": "error", "message": "Method not allowed."},
             status=405,
         )
-    return _forward_request("/api/products/", request)
+    return _forward_request("/api/promall/affiliate-banners/", request)
+
+
+@csrf_exempt
+def proxy_promall_events_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/promall/events/", request)
+
+
+@csrf_exempt
+def proxy_promall_event_types_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/promall/event-types/", request)
+
+
+# ============================================================
+# PROMALLSHOP BANNERS ? PROTECTED API
+# ============================================================
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_banners_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+
+    banners = PromallBanner.objects.filter(
+        entity__slug="promallshop",
+        is_active=True,
+    ).order_by("display_order", "-created_at")
+
+    results = []
+    for banner in banners:
+        results.append({
+            "id": banner.id,
+            "title": banner.title or "",
+            "description": banner.description or "",
+            "image": build_media_url(request, banner.image),
+            "display_order": banner.display_order,
+        })
+
+    return _cors_json_response({
+        "status": "success",
+        "count": len(results),
+        "banners": results,
+    })
+
+
+@csrf_exempt
+def proxy_promall_banners_api(request):
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {"status": "error", "message": "Method not allowed."},
+            status=405,
+        )
+    return _forward_request("/api/promall/banners/", request)
+
+
+# PROMALLSHOP CATALOG — PROTECTED API VIEWS
+# ============================================================
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_categories_api(request):
+    """
+    GET /api/promall/categories/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    categories = (
+        PromallCategory.objects.filter(is_active=True)
+        .order_by('display_order', 'name')
+        .prefetch_related('subcategories')
+    )
+    return _cors_json_response({
+        'status': 'success',
+        'count': categories.count(),
+        'categories': [serialize_promall_category(request, c) for c in categories],
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_category_detail_api(request, slug):
+    """
+    GET /api/promall/categories/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    cat = (
+        PromallCategory.objects.filter(slug=slug, is_active=True)
+        .order_by('display_order')
+        .first()
+    )
+    if not cat:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Category '{slug}' not found"},
+            status=404,
+        )
+    return _cors_json_response({
+        'status': 'success',
+        'category': serialize_promall_category_detail(request, cat),
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_subcategory_products_api(request, category_slug, subcategory_slug):
+    """
+    GET /api/promall/categories/<category_slug>/subcategories/<subcategory_slug>/products/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    cat = (
+        PromallCategory.objects.filter(slug=category_slug, is_active=True)
+        .order_by('display_order')
+        .first()
+    )
+    if not cat:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Category '{category_slug}' not found"},
+            status=404,
+        )
+    sub = cat.subcategories.filter(slug=subcategory_slug, is_active=True).first()
+    if not sub:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Subcategory '{subcategory_slug}' not found"},
+            status=404,
+        )
+    qs = sub.products.filter(is_active=True).order_by('display_order', 'name')
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(
+            models.Q(name__icontains=search) |
+            models.Q(model_number__icontains=search) |
+            models.Q(part_number__icontains=search)
+        )
+    return _cors_json_response({
+        'status': 'success',
+        'count': qs.count(),
+        'products': [serialize_promall_product_list(request, p) for p in qs],
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_products_api(request):
+    """
+    GET /api/promall/products/
+    Supports ?category=<slug> ?subcategory=<slug> ?search= ?is_hot=1 ?is_special=1
+    ?page=<n> ?page_size=<n>
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    qs = (
+        PromallProduct.objects.filter(is_active=True)
+        .select_related('category', 'subcategory')
+        .order_by('display_order', 'name')
+    )
+    # Filters
+    cat_slug = request.GET.get('category', '').strip()
+    sub_slug = request.GET.get('subcategory', '').strip()
+    search = request.GET.get('search', '').strip()
+    is_hot = request.GET.get('is_hot', '').strip()
+    is_spec = request.GET.get('is_special', '').strip()
+    if cat_slug:
+        qs = qs.filter(category__slug=cat_slug)
+    if sub_slug:
+        qs = qs.filter(subcategory__slug=sub_slug)
+    if search:
+        qs = qs.filter(
+            models.Q(name__icontains=search) |
+            models.Q(model_number__icontains=search) |
+            models.Q(part_number__icontains=search)
+        )
+    if is_hot == '1':
+        qs = qs.filter(is_hot=True)
+    if is_spec == '1':
+        qs = qs.filter(is_special=True)
+    # Pagination
+    try:
+        page_size = max(1, int(request.GET.get('page_size', 24)))
+    except (ValueError, TypeError):
+        page_size = 24
+    paginator = Paginator(qs, page_size)
+    page_num = request.GET.get('page', 1)
+    try:
+        page = paginator.page(page_num)
+    except (EmptyPage, PageNotAnInteger):
+        page = paginator.page(1)
+
+    def _page_url(n):
+        if n < 1 or n > paginator.num_pages:
+            return None
+        params = request.GET.copy()
+        params['page'] = n
+        return request.build_absolute_uri(f"?{params.urlencode()}")
+
+    return _cors_json_response({
+        'status': 'success',
+        'count': paginator.count,
+        'page': page.number,
+        'page_size': page_size,
+        'next': _page_url(page.number + 1),
+        'previous': _page_url(page.number - 1),
+        'results': [serialize_promall_product_list(request, p) for p in page],
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_product_detail_api(request, product_id):
+    """
+    GET /api/promall/products/<product_id>/
+    product_id is the external_id string.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    try:
+        product = (
+            PromallProduct.objects
+            .select_related('category', 'subcategory')
+            .get(external_id=product_id, is_active=True)
+        )
+    except PromallProduct.DoesNotExist:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Product '{product_id}' not found"},
+            status=404,
+        )
+    return _cors_json_response({
+        'status': 'success',
+        'product': serialize_promall_product_detail(request, product),
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_flash_sale_api(request, slug):
+    """
+    GET /api/promall/flash-sale/<slug>/
+    Returns HOT products for the entity plus the active FlashSale record.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Entity '{slug}' not found"},
+            status=404,
+        )
+    products = (
+        PromallProduct.objects.filter(entity=entity, is_hot=True, is_active=True)
+        .select_related('category', 'subcategory')
+        .order_by('display_order', 'name')
+    )
+    flash_sale_qs = entity.flash_sales.filter(
+        is_active=True,
+        end_datetime__gte=timezone.now(),
+    ).order_by('display_order', 'start_datetime', '-created_at')
+    flash_sale_obj = flash_sale_qs.first()
+    return _cors_json_response({
+        'status': 'success',
+        'entity': entity.name,
+        'slug': entity.slug,
+        'products': [serialize_promall_product_list(request, p) for p in products],
+        'flash_sale': serialize_flash_sale(request, flash_sale_obj) if flash_sale_obj else None,
+    }, status=200)
+
+
+@api_view(["GET", "OPTIONS"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_promall_featured_api(request, slug):
+    """
+    GET /api/promall/featured/<slug>/
+    Returns SPECIAL products for the entity.
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    try:
+        entity = Entity.objects.get(slug=slug, is_active=True)
+    except Entity.DoesNotExist:
+        return _cors_json_response(
+            {'status': 'error', 'message': f"Entity '{slug}' not found"},
+            status=404,
+        )
+    products = (
+        PromallProduct.objects.filter(entity=entity, is_special=True, is_active=True)
+        .select_related('category', 'subcategory')
+        .order_by('display_order', 'name')
+    )
+    return _cors_json_response({
+        'status': 'success',
+        'entity': entity.name,
+        'slug': entity.slug,
+        'products': [serialize_promall_product_list(request, p) for p in products],
+    }, status=200)
+
+
+# ============================================================
+# PROMALLSHOP CATALOG — PUBLIC PROXY VIEWS
+# ============================================================
+
+
+@csrf_exempt
+def proxy_promall_categories_api(request):
+    """
+    GET /proxy/promall/categories/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request('/api/promall/categories/', request)
+
+
+@csrf_exempt
+def proxy_promall_category_detail_api(request, slug):
+    """
+    GET /proxy/promall/categories/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request(f'/api/promall/categories/{slug}/', request)
+
+
+@csrf_exempt
+def proxy_promall_subcategory_products_api(request, category_slug, subcategory_slug):
+    """
+    GET /proxy/promall/categories/<category_slug>/subcategories/<subcategory_slug>/products/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request(
+        f'/api/promall/categories/{category_slug}/subcategories/{subcategory_slug}/products/',
+        request,
+    )
+
+
+@csrf_exempt
+def proxy_promall_products_api(request):
+    """
+    GET /proxy/promall/products/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request('/api/promall/products/', request)
+
+
+@csrf_exempt
+def proxy_promall_product_detail_api(request, product_id):
+    """
+    GET /proxy/promall/products/<product_id>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request(f'/api/promall/products/{product_id}/', request)
+
+
+@csrf_exempt
+def proxy_promall_flash_sale_api(request, slug):
+    """
+    GET /proxy/promall/flash-sale/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request(f'/api/promall/flash-sale/{slug}/', request)
+
+
+@csrf_exempt
+def proxy_promall_featured_api(request, slug):
+    """
+    GET /proxy/promall/featured/<slug>/
+    """
+    if request.method == "OPTIONS":
+        return _cors_json_response({}, status=200)
+    if request.method != "GET":
+        return _cors_json_response(
+            {'status': 'error', 'message': 'Method not allowed.'},
+            status=405,
+        )
+    return _forward_request(f'/api/promall/featured/{slug}/', request)

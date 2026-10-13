@@ -1,4 +1,4 @@
-"""
+﻿"""
 banners/serializers.py
 
 All serializer functions for the banners app.
@@ -6,46 +6,6 @@ Views import from here; helpers (build_media_url, filter_*) stay in api_helpers.
 """
 
 from .api_helpers import build_media_url
-
-
-# ============================================================
-# PRODUCT SERIALIZERS
-# ============================================================
-
-def serialize_product_faq(faq):
-    return {
-        "id": faq.id,
-        "question": faq.question or "",
-        "answer": faq.answer or "",
-        "display_order": faq.display_order,
-    }
-
-
-def serialize_product(request, product, include_faqs=False):
-    """
-    Full product serializer.
-    include_faqs=True for detail views; False for lightweight listing.
-    """
-    data = {
-        "id": product.id,
-        "external_product_id": product.external_product_id or "",
-        "name": product.name or "",
-        "slug": product.slug or "",
-        "price": str(product.price) if product.price else "",
-        "description": product.description or "",
-        "image": build_media_url(request, product.image),
-        "product_url": product.product_url or "",
-        "is_active": product.is_active,
-        "is_special": product.is_special,
-        "is_hot": product.is_hot,
-        "display_order": product.display_order,
-    }
-    if include_faqs:
-        data["faqs"] = [
-            serialize_product_faq(faq)
-            for faq in product.faqs.filter(is_active=True).order_by("display_order", "created_at")
-        ]
-    return data
 
 
 # ============================================================
@@ -79,13 +39,20 @@ def serialize_banner(request, banner):
 
 
 def serialize_affiliate_banner(request, banner):
-    return {
+    data = {
         "id": banner.id,
         "title": banner.title or "",
         "image": build_media_url(request, banner.image),
-        "affiliate_url": banner.affiliate_url or "",
+        "placement": banner.placement,
         "display_order": banner.display_order,
     }
+
+    if banner.placement == "program":
+        data["affiliate_url"] = banner.affiliate_url or ""
+
+    return data
+
+
 
 
 # ============================================================
@@ -182,11 +149,7 @@ def serialize_today_deal(request, deal):
         "title": deal.title or "",
         "subtitle": deal.subtitle or "",
         "image": build_media_url(request, deal.image),
-
-        "product_id": deal.product.id if deal.product else None,
-        "product_name": deal.product.name if deal.product else "",
-        "product_url": deal.product.product_url if deal.product else "",
-
+        "buy_now_url": deal.buy_now_url or "",
         "start_datetime": (
             deal.start_datetime.isoformat()
             if deal.start_datetime
@@ -310,7 +273,7 @@ def serialize_case_study_image(request, img):
 
 
 def serialize_case_study_list(request, cs):
-    """Lightweight serializer for listing cards — includes related items."""
+    """Lightweight serializer for listing cards â€” includes related items."""
     return {
         "id": cs.id,
         "title": cs.title or "",
@@ -405,3 +368,183 @@ def serialize_technology_partner(request, partner):
         "type": "Authorized Partner",
         "display_order": partner.display_order,
     }
+
+
+# ============================================================
+# PROMALLSHOP CATALOG SERIALIZERS
+# ============================================================
+# Note: 'from django.conf import settings' is imported below to avoid
+# shadowing any variable named 'settings' in this module scope.
+from django.conf import settings as _django_settings  # noqa: E402
+
+
+def build_promall_image_urls(request, product):
+    """
+    Returns a list of absolute image URL strings for a PromallProduct.
+
+    Priority:
+    1. Admin-uploaded image (product.image) -> built with build_media_url.
+    2. External image paths from product.external_image_paths -> built using
+       PROMALL_EXTERNAL_MEDIA_BASE_URL + path.
+    """
+    urls = []
+    if product.image:
+        url = build_media_url(request, product.image)
+        if url:
+            urls.append(url)
+    if product.external_image_paths:
+        base = (_django_settings.PROMALL_EXTERNAL_MEDIA_BASE_URL or '').rstrip('/')
+        for raw_path in product.external_image_paths.split(','):
+            path = raw_path.strip()
+            if path:
+                urls.append(base + '/' + path.lstrip('/'))
+    return urls
+
+
+def serialize_promall_subcategory(request, sub):
+    return {
+        'id': sub.id,
+        'external_id': sub.external_id or '',
+        'name': sub.name or '',
+        'slug': sub.slug or '',
+        'display_order': sub.display_order,
+    }
+
+
+def serialize_promall_category(request, cat):
+    return {
+        'id': cat.id,
+        'external_id': cat.external_id or '',
+        'name': cat.name or '',
+        'slug': cat.slug or '',
+        'description': cat.description or '',
+        'icon': build_media_url(request, cat.icon),
+        'display_order': cat.display_order,
+        'subcategories': [
+            serialize_promall_subcategory(request, sub)
+            for sub in cat.subcategories.filter(is_active=True)
+                                        .order_by('display_order', 'name')
+        ],
+    }
+
+
+def serialize_promall_category_detail(request, cat):
+    data = serialize_promall_category(request, cat)
+    data['faqs'] = [
+        {
+            'id': faq.id,
+            'question': faq.question or '',
+            'answer': faq.answer or '',
+            'display_order': faq.display_order,
+        }
+        for faq in cat.faqs.filter(is_active=True).order_by('display_order', 'created_at')
+    ]
+    return data
+
+
+def serialize_promall_product_list(request, product):
+    images = build_promall_image_urls(request, product)
+    badge = 'HOT' if product.is_hot else ('SPECIAL' if product.is_special else '')
+    return {
+        'id': product.id,
+        'external_id': product.external_id or '',
+        'name': product.name or '',
+        'slug': product.slug or '',
+        'short_description': product.short_description or '',
+        'category_id': product.category_id,
+        'category_name': product.category.name if product.category_id else '',
+        'subcategory_id': product.subcategory_id,
+        'subcategory_name': (product.subcategory.name if product.subcategory else ''),
+        'price': str(product.price) if product.price is not None else '',
+        'end_user_price': str(product.end_user_price) if product.end_user_price is not None else '',
+        'discount': str(product.discount) if product.discount is not None else '',
+        'is_hot': product.is_hot,
+        'is_special': product.is_special,
+        'display_order': product.display_order,
+        'image': images[0] if images else '',
+        'badge': badge,
+    }
+
+
+def serialize_promall_banner(request, banner):
+    """
+    Serializer for PromallBanner (Promallshop's dedicated main homepage banners).
+    Does NOT include button_text or button_link - those fields have been removed
+    from the model and will be dropped from the DB once migration 0037 is applied.
+    """
+    return {
+        "id": banner.id,
+        "title": banner.title or "",
+        "description": banner.description or "",
+        "image": build_media_url(request, banner.image),
+        "display_order": banner.display_order,
+    }
+
+
+def serialize_promall_event(request, event):
+    """
+    Serializer for PromallEvent (Promallshop-specific events).
+    Uses event_datetime (not event_date) and exposes event_type as a nested object.
+    """
+    return {
+        "id": event.id,
+        "name": event.name or "",
+        "description": event.description or "",
+        "event_datetime": (
+            event.event_datetime.isoformat()
+            if event.event_datetime
+            else ""
+        ),
+        "location": event.location or "",
+        "event_type": (
+            {
+                "id": event.event_type.id,
+                "name": event.event_type.name,
+                "slug": event.event_type.slug,
+            }
+            if event.event_type
+            else None
+        ),
+        "image": build_media_url(request, event.image),
+        "registration_link": event.registration_link or "",
+        "display_order": event.display_order,
+    }
+
+
+def serialize_promall_event_type(event_type):
+    """
+    Serializer for PromallEventType.
+    No request needed - no media fields.
+    """
+    return {
+        "id": event_type.id,
+        "name": event_type.name or "",
+        "slug": event_type.slug or "",
+        "display_order": event_type.display_order,
+    }
+
+
+def serialize_promall_product_detail(request, product):
+    data = serialize_promall_product_list(request, product)
+    data.update({
+        'description': product.description or '',
+        'model_number': product.model_number or '',
+        'part_number': product.part_number or '',
+        'warranty': product.warranty or '',
+        'video_url': product.video_url or '',
+        'quantity': product.quantity,
+        'meta_title': product.meta_title or '',
+        'meta_description': product.meta_description or '',
+        'keywords': product.keywords or '',
+        'all_images': build_promall_image_urls(request, product),
+        'faqs': [
+            {
+                'id': faq.id,
+                'question': faq.question or '',
+                'answer': faq.answer or '',
+                'display_order': faq.display_order,
+            }
+            for faq in product.faqs.filter(is_active=True).order_by('display_order', 'created_at')
+        ],
+    })
+    return data

@@ -1,0 +1,205 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (window.tinymce) {
+        tinymce.init({
+            selector: "textarea.rich-editor, textarea.category-faq-rich-editor",
+            height: 350,
+            menubar: true,
+            plugins: "lists link table code",
+            toolbar: "undo redo | blocks | bold italic | bullist numlist | link table | code",
+            promotion: false
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block content %}
+
+<h1>Edit Live Category</h1>
+
+<p>
+    <strong>Category ID:</strong> {{ category.id }}
+</p>
+
+<p>
+    <a href="{% url 'promall_live_categories' %}">
+        ← Back to Live Categories
+    </a>
+</p>
+
+<form method="post" id="category-edit-form">
+    {% csrf_token %}
+
+    {% for field in form %}
+        <div style="margin-bottom:22px;">
+            <label for="{{ field.id_for_label }}"
+                   style="display:block;font-weight:bold;margin-bottom:7px;">
+                {{ field.label }}
+            </label>
+
+            {% if field.name == "faq" %}
+                <div id="faq-container">
+                    {% for faq in faqs %}
+                    <div class="faq-item"
+                         style="border:1px solid #ddd;padding:15px;margin-bottom:15px;">
+
+                        <h4>FAQ {{ forloop.counter }}</h4>
+
+                        <label>Question</label>
+                        <textarea class="faq-question"
+                                  rows="2"
+                                  style="width:100%;">{{ faq.question }}</textarea>
+
+                        <label>Answer</label>
+                        <textarea class="faq-answer category-faq-rich-editor"
+                                  rows="6"
+                                  style="width:100%;">{{ faq.answer }}</textarea>
+
+                        <button type="button"
+                                class="button remove-faq">
+                            Remove FAQ
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <input type="hidden"
+                       id="faq-count"
+                       name="faq_count"
+                       value="0">
+
+                <button type="button"
+                        id="add-faq"
+                        class="button">
+                    + Add FAQ
+                </button>
+
+                <p style="color:#777;">
+                    FAQ answers can contain HTML formatting.
+                    Saving to Promall remains disabled.
+                </p>
+            {% else %}
+                {{ field }}
+            {% endif %}
+
+            {% if field.help_text %}
+                <p>{{ field.help_text }}</p>
+            {% endif %}
+
+            {% for error in field.errors %}
+                <p style="color:#ba2121;">{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    <button type="submit"
+            class="button default">
+        Save Changes
+    </button>
+
+    <p style="margin-top:12px;color:#777;">
+        This form displays live Promall category data.
+        Save Changes updates the supported category fields on Promall. FAQ changes are not saved yet.
+    </p>
+</form>
+
+
+<!-- CATEGORY FAQ CONTROLS -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById("faq-container");
+    const addButton = document.getElementById("add-faq");
+    const countInput = document.getElementById("faq-count");
+    const form = document.getElementById("category-edit-form");
+
+    if (!container || !addButton || !countInput || !form) return;
+
+    function addFaq(question = "", answer = "") {
+        const item = document.createElement("div");
+        item.className = "faq-item";
+        item.style.cssText =
+            "border:1px solid #ddd;padding:15px;margin-bottom:15px;";
+
+        const heading = document.createElement("h4");
+        heading.textContent = "FAQ";
+
+        const questionLabel = document.createElement("label");
+        questionLabel.textContent = "Question";
+
+        const questionInput = document.createElement("textarea");
+        questionInput.className = "faq-question";
+        questionInput.rows = 2;
+        questionInput.style.width = "100%";
+        questionInput.value = question;
+
+        const answerLabel = document.createElement("label");
+        answerLabel.textContent = "Answer";
+
+        const answerInput = document.createElement("textarea");
+        answerInput.className = "faq-answer category-faq-rich-editor";
+        answerInput.rows = 6;
+        answerInput.style.width = "100%";
+        answerInput.value = answer;
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "button remove-faq";
+        removeButton.textContent = "Remove FAQ";
+
+        removeButton.addEventListener("click", () => item.remove());
+
+        item.append(
+            heading, questionLabel, questionInput,
+            answerLabel, answerInput, removeButton
+        );
+
+        container.appendChild(item);
+
+        if (window.tinymce) {
+            tinymce.init({
+                target: answerInput,
+                height: 250,
+                menubar: true,
+                plugins: "lists link table code",
+                toolbar: "undo redo | blocks | bold italic | bullist numlist | link table | code",
+                promotion: false
+            });
+        }
+    }
+
+    addButton.addEventListener("click", () => addFaq());
+
+    container.addEventListener("click", function (event) {
+        if (event.target.classList.contains("remove-faq")) {
+            event.target.closest(".faq-item").remove();
+        }
+    });
+
+    form.addEventListener("submit", function () {
+        if (window.tinymce) {
+            tinymce.triggerSave();
+        }
+        const items = container.querySelectorAll(".faq-item");
+
+        items.forEach((item, index) => {
+            item.querySelector(".faq-question").name =
+                "faq_question_" + index;
+
+            item.querySelector(".faq-answer").name =
+                "faq_answer_" + index;
+        });
+
+        countInput.value = items.length;
+    });
+});
+</script>
+
+{% endblock %}

@@ -4,7 +4,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
 
 
-# to change the admin 
+# to change the admin
 admin.site.site_header = "Banner Control Management"
 admin.site.site_title = "CMS Admin"
 admin.site.index_title = "CMS Administration"
@@ -12,13 +12,10 @@ admin.site.index_title = "CMS Administration"
 from .models import (
     Entity,
     Banner,
-    # HomepageGif,
     FlashSale,
     TodayDeal,
     AffiliateBanner,
     UpcomingEvent,
-    Product,
-    ProductFAQ,
     ThingWeDo,
     CybersecuritySolution,
     Project,
@@ -31,17 +28,15 @@ from .models import (
     CaseStudyResultROI,
     EventMedia,
     TechnologyPartner,
+    PromallBanner,
+    PromallEventType,
+    PromallEvent,
 )
 
 
 # ============================================================
 # ENTITY INLINE CONTENT
 # ============================================================
-
-# class HomepageGifInline(admin.TabularInline):
-#     model = HomepageGif
-#     extra = 1
-
 
 class FlashSaleInline(admin.TabularInline):
     model = FlashSale
@@ -115,7 +110,6 @@ class EntityAdmin(admin.ModelAdmin):
         'url',
         'is_active',
         'banner_count',
-        # 'gif_count',
         'flash_sale_count',
         'today_deal_count',
         'affiliate_banner_count',
@@ -145,7 +139,6 @@ class EntityAdmin(admin.ModelAdmin):
     # ========================================================
 
     inlines = [
-        # HomepageGifInline,
         FlashSaleInline,
         TodayDealInline,
         AffiliateBannerInline,
@@ -163,11 +156,9 @@ class EntityAdmin(admin.ModelAdmin):
     def banner_count(self, obj):
         return obj.banners.count()
 
-    # @admin.display(description='GIFs')
-    # def gif_count(self, obj):
-    #     return obj.gifs.count()
 
- 
+
+
 
     @admin.display(description='Flash Sales')
     def flash_sale_count(self, obj):
@@ -209,7 +200,7 @@ class BannerAdmin(admin.ModelAdmin):
 
     list_display = (
         'title',
-        'entity',
+        'entity_list',
         'media_type',
         'media_preview',
         'is_active',
@@ -229,9 +220,10 @@ class BannerAdmin(admin.ModelAdmin):
         'entity__name',
     )
 
-    list_select_related = ('entity',)
-
-    autocomplete_fields = ['entity']
+    # filter_horizontal renders a dual-listbox in the admin:
+    #   Available Entities  â†’  Chosen Entities
+    # The admin can tick Proxynet Group, Promallshop, or both.
+    # filter_horizontal = ('entities',)
 
     # Organize fields into sections for better admin UX
     fieldsets = (
@@ -241,7 +233,7 @@ class BannerAdmin(admin.ModelAdmin):
                 'proxy_title',
                 'text',
                 'link',
-                'entity',
+                'entity',        # â† replaces the old 'entity' FK field
                 'media_type',
             )
         }),
@@ -264,6 +256,10 @@ class BannerAdmin(admin.ModelAdmin):
         }),
     )
 
+    @admin.display(description='Entity')
+    def entity_list(self, obj):
+     return obj.entity.name
+
     @admin.display(description='Media Preview')
     def media_preview(self, obj):
         """Show a preview of the media (image or video)"""
@@ -281,7 +277,7 @@ class BannerAdmin(admin.ModelAdmin):
             )
         elif obj.media_type == 'youtube' and obj.video_url:
             return format_html(
-                '<span style="color:#666; font-size:0.8em;">🎬 YouTube Video</span>'
+                '<span style="color:#666; font-size:0.8em;">ðŸŽ¬ YouTube Video</span>'
             )
         return "No Media"
 
@@ -294,23 +290,7 @@ class BannerAdmin(admin.ModelAdmin):
             )
         return "No Image"
 
-# ============================================================
-# HOMEPAGE GIF ADMIN
-# ============================================================
 
-# @admin.register(HomepageGif)
-# class HomepageGifAdmin(admin.ModelAdmin):
-
-#     list_display = (
-#         'id',
-#         'entity',
-#         'is_active',
-#     )
-
-#     list_filter = (
-#         'entity',
-#         'is_active',
-#     )
 
 
 
@@ -338,7 +318,7 @@ class FlashSaleAdmin(admin.ModelAdmin):
 # TODAY'S DEAL ADMIN
 # ============================================================
 
-# admin.py – Update TodayDealAdmin
+# admin.py â€“ Update TodayDealAdmin
 
 @admin.register(TodayDeal)
 class TodayDealAdmin(admin.ModelAdmin):
@@ -346,7 +326,7 @@ class TodayDealAdmin(admin.ModelAdmin):
     list_display = (
         'title',
         'entity',
-        'product',           # Shows product name
+        'buy_now_url',
         'image_preview',
         'start_datetime',
         'end_datetime',
@@ -363,25 +343,24 @@ class TodayDealAdmin(admin.ModelAdmin):
         'title',
         'subtitle',
         'entity__name',
-        'product__name',     # Search by product name
     )
 
-    list_select_related = ('entity', 'product')
+    list_select_related = ('entity',)
 
-    autocomplete_fields = ['entity', 'product']  # Nice dropdown!
+    autocomplete_fields = ['entity']
 
     fieldsets = (
         (None, {
             'fields': (
                 'entity',
-                'product',       # Dropdown to select product
+                'buy_now_url',
                 'title',
                 'subtitle',
                 'image',
                 'display_order',
                 'is_active',
             ),
-            'description': 'Select the product. The "BUY NOW" button will navigate to that product page.'
+            'description': "Paste the full product link. The BUY NOW button opens this URL.",
         }),
         ('Publishing', {
             'fields': (
@@ -410,19 +389,18 @@ class TodayDealAdmin(admin.ModelAdmin):
 
 @admin.register(AffiliateBanner)
 class AffiliateBannerAdmin(admin.ModelAdmin):
-
     list_display = (
-        'id',
-        'entity',
-        'is_active',
+        "id",
+        "title",
+        "entity",
+        "placement",
+        "is_active",
+        "display_order",
     )
-
-    list_filter = (
-        'entity',
-        'is_active',
-    )
-
-
+    list_filter = ("entity", "placement", "is_active")
+    search_fields = ("title", "entity__name")
+    list_editable = ("placement", "is_active", "display_order")
+    ordering = ("entity", "display_order", "-created_at")
 
 # ============================================================
 # UPCOMING EVENT ADMIN
@@ -1161,70 +1139,141 @@ class CustomTokenAdmin(TokenAdmin):
     )
 
 
-    # admin.py – Product admin
+# ============================================================
+# PROMALLSHOP CATALOG ADMIN
+# ============================================================
 
-class ProductFAQInline(admin.TabularInline):
-    model = ProductFAQ
-    extra = 1
+from .models import (
+    PromallCategory,
+    PromallCategoryFAQ,
+    PromallSubcategory,
+    PromallProduct,
+    PromallProductFAQ,
+)
+
+
+class PromallCategoryFAQInline(admin.TabularInline):
+    model = PromallCategoryFAQ
     fields = ('question', 'answer', 'display_order', 'is_active')
+    extra = 1
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class PromallSubcategoryInline(admin.TabularInline):
+    model = PromallSubcategory
+    fields = ('name', 'slug', 'display_order', 'is_active')
+    extra = 1
 
-    list_display = (
-        'name',
-        'external_product_id',
-        'price',
-        'is_special',
-        'is_hot',
-        'is_active',
-        'display_order',
-        'created_at',
-    )
 
-    list_filter = (
-        'is_active',
-        'is_special',
-        'is_hot',
-    )
+class PromallProductFAQInline(admin.TabularInline):
+    model = PromallProductFAQ
+    fields = ('question', 'answer', 'display_order', 'is_active')
+    extra = 1
 
-    search_fields = ('name', 'slug', 'description', 'external_product_id')
 
+@admin.register(PromallCategory)
+class PromallCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'external_id', 'is_active', 'display_order')
+    search_fields = ('name', 'slug', 'external_id')
+    list_filter = ('is_active',)
+    list_editable = ('is_active', 'display_order')
     prepopulated_fields = {'slug': ('name',)}
-
-    list_editable = ('is_special', 'is_hot', 'is_active', 'display_order')
-
-    readonly_fields = ('created_at', 'updated_at')
-
-    inlines = [ProductFAQInline]
-
+    readonly_fields = ('external_id',)
+    inlines = [PromallCategoryFAQInline, PromallSubcategoryInline]
     fieldsets = (
-        ('Product Information', {
-            'fields': (
-                'name',
-                'slug',
-                'external_product_id',
-                'product_url',
-                'image',
-                'price',
-                'description',
-            ),
-        }),
-        ('Editorial Controls', {
-            'fields': (
-                'is_active',
-                'is_special',
-                'is_hot',
-                'display_order',
-            ),
-            'description': (
-                'These fields are admin-controlled and are '
-                'never overwritten by the external product sync.'
-            ),
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',),
-        }),
+        ('Basic Info', {'fields': (
+            'entity', 'external_id', 'name', 'slug',
+            'description', 'icon', 'display_order', 'is_active',
+        )}),
     )
+
+
+@admin.register(PromallSubcategory)
+class PromallSubcategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'slug', 'external_id', 'is_active', 'display_order')
+    search_fields = ('name', 'slug', 'external_id')
+    list_filter = ('category', 'is_active')
+    list_editable = ('is_active', 'display_order')
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ('external_id',)
+
+
+@admin.register(PromallProduct)
+class PromallProductAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'category', 'subcategory', 'price',
+        'is_hot', 'is_special', 'is_active', 'display_order',
+    )
+    list_editable = ('is_hot', 'is_special', 'is_active')
+    search_fields = ('name', 'model_number', 'part_number', 'external_id')
+    list_filter = ('category', 'subcategory', 'is_hot', 'is_special', 'is_active')
+    list_select_related = ('category', 'subcategory')
+    readonly_fields = (
+        'external_id', 'external_image_paths',
+        'alternative_product_ids', 'complementary_product_ids',
+    )
+    prepopulated_fields = {'slug': ('name',)}
+    inlines = [PromallProductFAQInline]
+    fieldsets = (
+        ('Product Info', {'fields': (
+            'entity', 'external_id', 'category', 'subcategory',
+            'name', 'slug', 'short_description', 'description',
+            'model_number', 'part_number', 'warranty', 'video_url',
+        )}),
+        ('Pricing', {'fields': ('price', 'end_user_price', 'discount', 'quantity')}),
+        ('Media', {
+            'fields': ('image', 'external_image_paths'),
+            'description': 'Upload only for admin-created products. Synced products use external_image_paths.',
+        }),
+        ('Flags', {'fields': ('is_hot', 'is_special', 'is_active', 'display_order')}),
+        ('SEO', {'fields': ('meta_title', 'meta_description', 'keywords')}),
+        ('API Data (read-only)', {'fields': ('alternative_product_ids', 'complementary_product_ids')}),
+    )
+
+# ============================================================
+# PROMALL SITE CONTENT ADMIN
+# ============================================================
+
+@admin.register(PromallBanner)
+class PromallBannerAdmin(admin.ModelAdmin):
+    list_display = ("title", "entity", "is_active", "display_order", "created_at")
+    list_filter = ("entity", "is_active")
+    search_fields = ("title", "description")
+    list_editable = ("is_active", "display_order")
+    ordering = ("display_order", "-created_at")
+
+
+@admin.register(PromallEventType)
+class PromallEventTypeAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "entity", "is_active", "display_order")
+    list_filter = ("entity", "is_active")
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}
+    list_editable = ("is_active", "display_order")
+    ordering = ("display_order", "name")
+
+
+@admin.register(PromallEvent)
+class PromallEventAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "entity",
+        "event_type",
+        "event_datetime",
+        "location",
+        "is_active",
+        "display_order",
+    )
+    list_filter = ("entity", "event_type", "is_active")
+    search_fields = ("name", "description", "location")
+    list_editable = ("is_active", "display_order")
+    ordering = ("event_datetime", "display_order")
+    date_hierarchy = "event_datetime"
+
+
+
+
+
+# Hide obsolete Promall catalog models from Django Admin.
+for model in (PromallCategory, PromallSubcategory, PromallProduct):
+    if admin.site.is_registered(model):
+        admin.site.unregister(model)

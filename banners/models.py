@@ -452,6 +452,13 @@ class TodayDeal(ScheduledMixin):
 # ============================================================
 
 class AffiliateBanner(PublishableMixin):
+    PLACEMENT_CHOICES = [
+        ("top", "Top"),
+        ("program", "Program"),
+        ("below_categories", "Below Categories"),
+        ("flash_side", "Flash Side"),
+        ("below_flash", "Below Flash"),
+    ]
 
     entity = models.ForeignKey(
         Entity,
@@ -459,45 +466,65 @@ class AffiliateBanner(PublishableMixin):
         on_delete=models.CASCADE,
         help_text="Entity this affiliate banner belongs to.",
     )
-
     title = models.CharField(
         max_length=200,
         help_text="Internal title for this affiliate banner.",
     )
-
     image = models.ImageField(
         upload_to="affiliate_banners/",
-        help_text="Recommended size: 300 x 250 px or 728 x 90 px",
+        help_text="Upload the banner image.",
     )
-
+    placement = models.CharField(
+        max_length=30,
+        choices=PLACEMENT_CHOICES,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="Choose where this banner appears. Only Program uses a destination URL.",
+    )
     affiliate_url = models.URLField(
-        help_text="External affiliate or target URL.",
+        blank=True,
+        help_text="Required for Program placement only.",
     )
-
     display_order = models.PositiveIntegerField(
         default=0,
-        help_text="Display order on the homepage. Lower numbers appear first.",
+        help_text="Lower numbers appear first.",
     )
 
     class Meta:
         ordering = ["display_order", "-created_at"]
         verbose_name = "Affiliate Banner"
         verbose_name_plural = "Affiliate Banners"
-
         indexes = [
             models.Index(
                 fields=["entity", "is_active", "display_order"]
             ),
         ]
 
+    def clean(self):
+        super().clean()
+
+        if self.placement:
+            duplicates = AffiliateBanner.objects.filter(
+                entity=self.entity,
+                placement=self.placement,
+            )
+            if self.pk:
+                duplicates = duplicates.exclude(pk=self.pk)
+            if duplicates.exists():
+                raise ValidationError({
+                    "placement": "Only one affiliate banner is allowed per entity for each placement."
+                })
+
+        if self.placement == "program" and not self.affiliate_url:
+            raise ValidationError(
+                {"affiliate_url": "A destination URL is required for Program placement."}
+            )
+
+        if self.placement != "program":
+            self.affiliate_url = ""
     def __str__(self):
         return f"{self.title} - {self.entity.name}"
-
-
-# ============================================================
-# UPCOMING EVENT
-# ============================================================
-
 class UpcomingEvent(PublishableMixin):
 
     entity = models.ForeignKey(
@@ -584,7 +611,7 @@ class UpcomingEvent(PublishableMixin):
 class EventMedia(models.Model):
     """
     Gallery item (image or video) belonging to a single UpcomingEvent.
-    One UpcomingEvent → many EventMedia records.
+    One UpcomingEvent â†’ many EventMedia records.
     Follows the same pattern as CaseStudyImage.
     """
 
@@ -759,14 +786,14 @@ class CybersecuritySolution(PublishableMixin):
 
     image = models.ImageField(
         upload_to="cybersecurity_solutions/",
-        help_text="MAIN PRODUCT IMAGE — the large image shown in the solution card/slide.",
+        help_text="MAIN PRODUCT IMAGE â€” the large image shown in the solution card/slide.",
     )
 
     product_logo = models.ImageField(
         upload_to="cybersecurity_solutions/logos/",
         blank=True,
         null=True,
-        help_text="PRODUCT/VENDOR LOGO — the small logo displayed below the product description (e.g., V-Key logo). Different from the main image above.",
+        help_text="PRODUCT/VENDOR LOGO â€” the small logo displayed below the product description (e.g., V-Key logo). Different from the main image above.",
         verbose_name="Product/Vendor Logo",
     )
 
@@ -1076,7 +1103,7 @@ class TeamCertificate(PublishableMixin):
 class CaseStudy(PublishableMixin):
     """
     A fully dynamic Case Study managed entirely from Django Admin.
-    Solution, industry, and country are plain text fields on the model —
+    Solution, industry, and country are plain text fields on the model â€”
     no separate lookup tables required.  Filter options are derived
     dynamically from active records at query time.
     """
@@ -1090,7 +1117,7 @@ class CaseStudy(PublishableMixin):
 
     title = models.CharField(
         max_length=250,
-        help_text="Case study title (e.g., 'Access Bank Videowall — Ikota Branch').",
+        help_text="Case study title (e.g., 'Access Bank Videowall â€” Ikota Branch').",
     )
 
     slug = models.SlugField(
@@ -1132,7 +1159,7 @@ class CaseStudy(PublishableMixin):
         help_text="Main hero image for the case study.",
     )
 
-    # ── Full case-study content ──────────────────────────────
+    # â”€â”€ Full case-study content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     client_overview = models.TextField(
         blank=True,
         help_text="Background information about the client.",
@@ -1154,7 +1181,7 @@ class CaseStudy(PublishableMixin):
         help_text="How the solution was implemented.",
     )
 
-    # ── Publishing ───────────────────────────────────────────
+    # â”€â”€ Publishing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     display_order = models.PositiveIntegerField(
         default=0,
         help_text="Lower numbers appear first in the listing.",
@@ -1172,7 +1199,7 @@ class CaseStudy(PublishableMixin):
         ]
 
     def __str__(self):
-        return f"{self.title} — {self.client}"
+        return f"{self.title} â€” {self.client}"
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1231,7 +1258,7 @@ class CaseStudyImage(models.Model):
 class CaseStudyTechnology(models.Model):
     """
     A single technology item used in a Case Study.
-    One CaseStudy → many CaseStudyTechnology records.
+    One CaseStudy â†’ many CaseStudyTechnology records.
     """
 
     case_study = models.ForeignKey(
@@ -1259,7 +1286,7 @@ class CaseStudyTechnology(models.Model):
         verbose_name_plural = "Technologies Used"
 
     def __str__(self):
-        return f"{self.name} — {self.case_study.title}"
+        return f"{self.name} â€” {self.case_study.title}"
 
 
 # ============================================================
@@ -1269,7 +1296,7 @@ class CaseStudyTechnology(models.Model):
 class CaseStudyResultROI(models.Model):
     """
     A single Result & ROI item for a Case Study.
-    One CaseStudy → many CaseStudyResultROI records.
+    One CaseStudy â†’ many CaseStudyResultROI records.
     """
 
     case_study = models.ForeignKey(
@@ -1380,7 +1407,7 @@ class PromallCategory(models.Model):
     slug = models.SlugField(
         max_length=300,
         db_index=True,
-        help_text='URL-friendly identifier. Not globally unique — the same slug may appear in multiple categories.',
+        help_text='URL-friendly identifier. Not globally unique â€” the same slug may appear in multiple categories.',
     )
 
     description = models.TextField(
@@ -1572,8 +1599,8 @@ class PromallProduct(models.Model):
 
     slug = models.SlugField(
         max_length=500,
-        unique=True,
-        help_text='URL-friendly product identifier. Must be unique across all products.',
+        db_index=True,
+        help_text='URL-friendly product identifier.',
     )
 
     short_description = models.TextField(
@@ -1648,7 +1675,7 @@ class PromallProduct(models.Model):
 
     external_image_paths = models.TextField(
         blank=True,
-        help_text='Comma-separated relative image paths received from the Promall API. Read-only — never edit manually.',
+        help_text='Comma-separated relative image paths received from the Promall API. Read-only â€” never edit manually.',
     )
 
     is_hot = models.BooleanField(
@@ -1763,3 +1790,103 @@ class PromallProductFAQ(models.Model):
 
     def __str__(self):
         return f'{self.question[:80]} ({self.product.name})'
+
+
+# ============================================================
+# PROMALL SITE CONTENT
+# ============================================================
+
+class PromallBanner(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        related_name="promall_banners",
+        on_delete=models.CASCADE,
+        help_text="Must be the Promallshop entity.",
+    )
+    title = models.CharField(
+        max_length=300,
+        help_text="Banner headline text displayed over the image.",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional supporting text shown beneath the title.",
+    )
+    image = models.ImageField(
+        upload_to="promall/banners/",
+        help_text="Main banner image.",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "-created_at"]
+        verbose_name = "Promall Banner"
+        verbose_name_plural = "Promall Banners"
+
+    def __str__(self):
+        return self.title
+
+
+class PromallEventType(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        related_name="promall_event_types",
+        on_delete=models.CASCADE,
+        help_text="Must be the Promallshop entity.",
+    )
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, db_index=True)
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "name"]
+        unique_together = [("entity", "slug")]
+        verbose_name = "Promall Event Type"
+        verbose_name_plural = "Promall Event Types"
+
+    def __str__(self):
+        return self.name
+
+
+class PromallEvent(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        related_name="promall_events",
+        on_delete=models.CASCADE,
+        help_text="Must be the Promallshop entity.",
+    )
+    event_type = models.ForeignKey(
+        PromallEventType,
+        related_name="events",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Event category, such as Webinars or Training.",
+    )
+    name = models.CharField(max_length=300)
+    description = models.TextField(blank=True)
+    event_datetime = models.DateTimeField()
+    location = models.CharField(max_length=300, blank=True)
+    image = models.ImageField(
+        upload_to="promall/events/",
+        null=True,
+        blank=True,
+    )
+    registration_link = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["event_datetime", "display_order"]
+        verbose_name = "Promall Event"
+        verbose_name_plural = "Promall Events"
+
+    def __str__(self):
+        return self.name

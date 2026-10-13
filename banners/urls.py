@@ -5,8 +5,6 @@ from .views import (
     proxy_events_api,
     proxy_combined_api,
     proxy_entities_api,
-    get_product_api,
-    proxy_product_api,
     get_banner_api,
     get_events_api,
     get_combined_api,
@@ -35,8 +33,28 @@ from .views import (
     proxy_event_detail_api,
     get_partners_api,
     proxy_partners_api,
-    get_products_api,
-    proxy_products_api,
+    get_promall_affiliate_banners_api,
+    get_promall_events_api,
+    get_promall_event_types_api,
+    proxy_promall_affiliate_banners_api,
+    proxy_promall_events_api,
+    proxy_promall_event_types_api,
+    get_promall_banners_api,
+    proxy_promall_banners_api,
+    get_promall_categories_api,
+    get_promall_category_detail_api,
+    get_promall_subcategory_products_api,
+    get_promall_products_api,
+    get_promall_product_detail_api,
+    get_promall_flash_sale_api,
+    get_promall_featured_api,
+    proxy_promall_categories_api,
+    proxy_promall_category_detail_api,
+    proxy_promall_subcategory_products_api,
+    proxy_promall_products_api,
+    proxy_promall_product_detail_api,
+    proxy_promall_flash_sale_api,
+    proxy_promall_featured_api,
 )
 
 app_name = "banners"
@@ -101,22 +119,6 @@ urlpatterns = [
         "api/entities/",
         get_entities_api,
         name="entity-list",
-    ),
-
-    # ============================================================
-    # PRODUCT
-    # ============================================================
-
-    path(
-        "api/product/<int:product_id>/",
-        get_product_api,
-        name="get_product",
-    ),
-
-    path(
-        "proxy/product/<int:product_id>/",
-        proxy_product_api,
-        name="proxy_product",
     ),
 
     # ============================================================
@@ -312,18 +314,108 @@ urlpatterns = [
     ),
 
     # ============================================================
-    # PRODUCTS LISTING
+    # PROMALLSHOP SITE CONTENT ? PROTECTED API
+    path("api/promall/affiliate-banners/", get_promall_affiliate_banners_api, name="api-promall-affiliate-banners"),
+    path("api/promall/events/", get_promall_events_api, name="api-promall-events"),
+    path("api/promall/event-types/", get_promall_event_types_api, name="api-promall-event-types"),
+
+    # PROMALLSHOP SITE CONTENT ? PUBLIC PROXY
+    path("proxy/promall/affiliate-banners/", proxy_promall_affiliate_banners_api, name="proxy-promall-affiliate-banners"),
+    path("proxy/promall/events/", proxy_promall_events_api, name="proxy-promall-events"),
+    path("proxy/promall/event-types/", proxy_promall_event_types_api, name="proxy-promall-event-types"),
+
+    # PROMALLSHOP BANNERS
+    path("api/promall/banners/", get_promall_banners_api, name="api-promall-banners"),
+    path("proxy/promall/banners/", proxy_promall_banners_api, name="proxy-promall-banners"),
+
+    # PROMALLSHOP CATALOG — PROTECTED API
     # ============================================================
 
     path(
-        "proxy/products/",
-        proxy_products_api,
-        name="proxy-products",
+        'api/promall/categories/',
+        get_promall_categories_api,
+        name='api-promall-categories',
     ),
 
     path(
-        "api/products/",
-        get_products_api,
-        name="api-products",
+        'api/promall/categories/<slug:slug>/',
+        get_promall_category_detail_api,
+        name='api-promall-category-detail',
+    ),
+
+    path(
+        'api/promall/categories/<slug:category_slug>/subcategories/<slug:subcategory_slug>/products/',
+        get_promall_subcategory_products_api,
+        name='api-promall-subcategory-products',
+    ),
+
+    path(
+        'api/promall/products/',
+        get_promall_products_api,
+        name='api-promall-products',
+    ),
+
+    path(
+        'api/promall/products/<str:product_id>/',
+        get_promall_product_detail_api,
+        name='api-promall-product-detail',
+    ),
+
+    path(
+        'api/promall/flash-sale/<slug:slug>/',
+        get_promall_flash_sale_api,
+        name='api-promall-flash-sale',
+    ),
+
+    path(
+        'api/promall/featured/<slug:slug>/',
+        get_promall_featured_api,
+        name='api-promall-featured',
+    ),
+
+    # ============================================================
+    # PROMALLSHOP CATALOG — PUBLIC PROXY
+    # ============================================================
+
+    path(
+        'proxy/promall/categories/',
+        proxy_promall_categories_api,
+        name='proxy-promall-categories',
+    ),
+
+    path(
+        'proxy/promall/categories/<slug:slug>/',
+        proxy_promall_category_detail_api,
+        name='proxy-promall-category-detail',
+    ),
+
+    path(
+        'proxy/promall/categories/<slug:category_slug>/subcategories/<slug:subcategory_slug>/products/',
+        proxy_promall_subcategory_products_api,
+        name='proxy-promall-subcategory-products',
+    ),
+
+    path(
+        'proxy/promall/products/',
+        proxy_promall_products_api,
+        name='proxy-promall-products',
+    ),
+
+    path(
+        'proxy/promall/products/<str:product_id>/',
+        proxy_promall_product_detail_api,
+        name='proxy-promall-product-detail',
+    ),
+
+    path(
+        'proxy/promall/flash-sale/<slug:slug>/',
+        proxy_promall_flash_sale_api,
+        name='proxy-promall-flash-sale',
+    ),
+
+    path(
+        'proxy/promall/featured/<slug:slug>/',
+        proxy_promall_featured_api,
+        name='proxy-promall-featured',
     ),
 ]

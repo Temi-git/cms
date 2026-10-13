@@ -131,3 +131,15 @@ SITE_URL = os.getenv(
     'SITE_URL',
     'https://manager.promallshop.com'
 )
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://manager.promallshop.com",
+]
+
+# ============================================================
+# PROMALLSHOP SYNC SETTINGS
+# ============================================================
+# TODO: Set PROMALL_EXTERNAL_MEDIA_BASE_URL in your .env before running sync_promall_catalog.
+# This is the base URL for images served from the Promall API, e.g.:
+#   PROMALL_EXTERNAL_MEDIA_BASE_URL=https://protrackapi.casdnet.com
+PROMALL_EXTERNAL_MEDIA_BASE_URL = os.environ.get('PROMALL_EXTERNAL_MEDIA_BASE_URL', '')

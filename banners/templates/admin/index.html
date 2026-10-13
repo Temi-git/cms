@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+
 <div id="content-main">
 
     <!-- ================================================== -->
@@ -68,62 +69,220 @@
     <!-- PROMALLSHOP -->
     <!-- ================================================== -->
 
+
+    <!-- PROMALLSHOP -->
     <div class="admin-business-section">
         <h2 class="admin-business-title">PROMALLSHOP</h2>
-
         <div class="admin-model-grid">
 
-            {% for app in app_list %}
-                {% for model in app.models %}
-
-                   {% if model.object_name == "Banner" or model.object_name == "Product" or model.object_name == "FlashSale" or model.object_name == "TodayDeal" or model.object_name == "AffiliateBanner"  or model.object_name == "UpcomingEvent" %}
-
-                        <div class="admin-model-card">
-
-                            <div class="admin-model-card__header">
-                                <h3>
-                                    {% if model.admin_url %}
-                                        <a href="{{ model.admin_url }}">
-                                            {{ model.name }}
-                                        </a>
-                                    {% else %}
-                                        {{ model.name }}
-                                    {% endif %}
-                                </h3>
-                            </div>
-
-                            <div class="admin-model-card__actions">
-
-                                {% if model.add_url %}
-                                    <a href="{{ model.add_url }}" class="add-link">
-                                        + Add
-                                    </a>
-                                {% endif %}
-
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "AffiliateBanner" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
                                 {% if model.admin_url %}
-                                    <a href="{{ model.admin_url }}" class="manage-link">
-                                        Manage
-                                    </a>
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
                                 {% endif %}
-
-                            </div>
-
+                            </h3>
                         </div>
-
-                    {% endif %}
-
-                {% endfor %}
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
             {% endfor %}
+        {% endfor %}
+
+
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "FlashSale" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "TodayDeal" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "PromallBanner" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "PromallEventType" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "PromallEvent" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+
+        <div class="admin-model-card">
+            <div class="admin-model-card__header">
+                <h3>
+                    <a href="{% url 'promall_live_products' %}">Live Products</a>
+                </h3>
+            </div>
+            <div class="admin-model-card__actions">
+                <a href="{% url 'promall_live_products' %}" class="manage-link">
+                    Manage
+                </a>
+            </div>
+        </div>
+
+
+        <div class="admin-model-card">
+            <div class="admin-model-card__header">
+                <h3>
+                    <a href="{% url 'promall_live_subcategories' %}">Live Subcategories</a>
+                </h3>
+            </div>
+            <div class="admin-model-card__actions">
+                <a href="{% url 'promall_live_subcategories' %}" class="manage-link">
+                    Manage
+                </a>
+            </div>
+        </div>
+
+
+        <div class="admin-model-card">
+            <div class="admin-model-card__header">
+                <h3>
+                    <a href="{% url 'promall_live_categories' %}">Live Categories</a>
+                </h3>
+            </div>
+            <div class="admin-model-card__actions">
+                <a href="{% url 'promall_live_categories' %}" class="manage-link">
+                    Manage
+                </a>
+            </div>
+        </div>
 
         </div>
     </div>
 
-
-    <!-- ================================================== -->
     <!-- SYSTEM -->
-    <!-- ================================================== -->
-
-    <div class="admin-business-section">
+<div class="admin-business-section">
         <h2 class="admin-business-title">SYSTEM</h2>
 
         <div class="admin-model-grid">
