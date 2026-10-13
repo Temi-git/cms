@@ -346,22 +346,6 @@ class FlashSale(ScheduledMixin):
         on_delete=models.CASCADE,
         help_text="Entity this flash sale belongs to.",
     )
-
-    title = models.CharField(
-        max_length=200,
-        help_text="Flash sale title.",
-    )
-
-    description = models.TextField(
-        blank=True,
-        help_text="Flash sale description.",
-    )
-
-    image = models.ImageField(
-        upload_to="flash_sales/",
-        help_text="Recommended size: 1200 x 267 px (use animated GIF)",
-    )
-
     display_order = models.PositiveIntegerField(
         default=0,
         help_text="Display order on the homepage. Lower numbers appear first.",
@@ -384,7 +368,7 @@ class FlashSale(ScheduledMixin):
         ]
 
     def __str__(self):
-        return f"{self.title} - {self.entity.name}"
+        return f"Flash Sale #{self.pk} - {self.entity.name}"
 
 
 # ============================================================

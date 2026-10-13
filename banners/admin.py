@@ -305,6 +305,16 @@ class FlashSaleAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'entity',
+        'start_datetime',
+        'end_datetime',
+        'is_active',
+    )
+
+    fields = (
+        'entity',
+        'start_datetime',
+        'end_datetime',
+        'display_order',
         'is_active',
     )
 

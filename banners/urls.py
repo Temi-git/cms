@@ -419,3 +419,15 @@ urlpatterns = [
         name='proxy-promall-featured',
     ),
 ]
+
+
+# PROMALLSHOP CATEGORY GIFS ? PUBLIC FRONTEND
+from .views import get_promall_category_gifs_public
+
+urlpatterns += [
+    path(
+        "proxy/promall/category-gifs/",
+        get_promall_category_gifs_public,
+        name="proxy-promall-category-gifs",
+    ),
+]

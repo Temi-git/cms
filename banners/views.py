@@ -815,6 +815,20 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
                 serialize_today_deal(request, item)
                 for item in today_deals
             ],
+
+            "category_gifs": [
+                {
+                    "id": item.pk,
+                    "category_id": item.category_id,
+                    "category_name": item.category_name,
+                    "gif_url": request.build_absolute_uri(item.gif.url),
+                    "is_active": item.is_active,
+                }
+                for item in CategoryGIFModel.objects.filter(
+                    is_active=True
+                ).order_by("category_name")
+                if item.gif
+            ],
         },
         status=200,
     )
@@ -2359,3 +2373,36 @@ def proxy_promall_featured_api(request, slug):
             status=405,
         )
     return _forward_request(f'/api/promall/featured/{slug}/', request)
+
+
+# PROMALLSHOP CATEGORY GIFS ? PUBLIC FRONTEND API
+from django.http import JsonResponse as CategoryGIFJsonResponse
+from .models import PromallCategoryGIF as CategoryGIFModel
+
+
+def get_promall_category_gifs_public(request):
+    if request.method != "GET":
+        return CategoryGIFJsonResponse(
+            {"error": "Method not allowed"},
+            status=405,
+        )
+
+    gifs = CategoryGIFModel.objects.filter(is_active=True).order_by(
+        "category_name"
+    )
+
+    data = [
+        {
+            "id": item.pk,
+            "category_id": item.category_id,
+            "category_name": item.category_name,
+            "gif_url": request.build_absolute_uri(item.gif.url),
+        }
+        for item in gifs
+        if item.gif
+    ]
+
+    return CategoryGIFJsonResponse({
+        "success": True,
+        "data": data,
+    })

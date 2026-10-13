@@ -1,4 +1,4 @@
-﻿"""
+"""
 banners/serializers.py
 
 All serializer functions for the banners app.
@@ -124,9 +124,6 @@ def serialize_event_detail(request, event):
 def serialize_flash_sale(request, flash_sale):
     return {
         "id": flash_sale.id,
-        "title": flash_sale.title or "",
-        "description": flash_sale.description or "",
-        "image": build_media_url(request, flash_sale.image),
         "start_datetime": (
             flash_sale.start_datetime.isoformat()
             if flash_sale.start_datetime
