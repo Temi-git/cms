@@ -823,7 +823,7 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
                     "id": item.pk,
                     "category_id": item.category_id,
                     "category_name": item.category_name,
-                    "gif_url": request.build_absolute_uri(item.gif.url),
+                    "gif_url": f"https://manager.promallshop.com{item.gif.url}",
                     "is_active": item.is_active,
                 }
                 for item in CategoryGIFModel.objects.filter(
@@ -2398,7 +2398,7 @@ def get_promall_category_gifs_public(request):
             "id": item.pk,
             "category_id": item.category_id,
             "category_name": item.category_name,
-            "gif_url": request.build_absolute_uri(item.gif.url),
+            "gif_url": f"https://manager.promallshop.com{item.gif.url}",
         }
         for item in gifs
         if item.gif

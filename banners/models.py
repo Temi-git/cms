@@ -1,3 +1,4 @@
+from .promall_category_gif_storage import PromallCategoryGIFStorage
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -1880,13 +1881,17 @@ class PromallEvent(models.Model):
 # PROMALLSHOP CATEGORY GIFS
 # ============================================================
 
+def promall_category_gif_upload_path(instance, filename):
+    return f"promall/category-gifs/{instance.category_id}.gif"
+
+
 class PromallCategoryGIF(models.Model):
     category_id = models.PositiveIntegerField(
         unique=True,
         help_text="Category ID from the live Promall API.",
     )
     category_name = models.CharField(max_length=255)
-    gif = models.FileField(upload_to="promall/category-gifs/")
+    gif = models.FileField(upload_to=promall_category_gif_upload_path, storage=PromallCategoryGIFStorage())
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
