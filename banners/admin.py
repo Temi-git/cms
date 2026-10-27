@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+from django_ckeditor_5.widgets import CKEditor5Widget
 from django.utils.html import format_html
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
@@ -31,6 +33,8 @@ from .models import (
     PromallBanner,
     PromallEventType,
     PromallEvent,
+    PromallAdditionalWebsiteContent,
+    PromallWebsiteFAQ,
 )
 
 
@@ -221,7 +225,7 @@ class BannerAdmin(admin.ModelAdmin):
     )
 
     # filter_horizontal renders a dual-listbox in the admin:
-    #   Available Entities  â†’  Chosen Entities
+    #   Available Entities  Ã¢â€ â€™  Chosen Entities
     # The admin can tick Proxynet Group, Promallshop, or both.
     # filter_horizontal = ('entities',)
 
@@ -233,7 +237,7 @@ class BannerAdmin(admin.ModelAdmin):
                 'proxy_title',
                 'text',
                 'link',
-                'entity',        # â† replaces the old 'entity' FK field
+                'entity',        # Ã¢â€ Â replaces the old 'entity' FK field
                 'media_type',
             )
         }),
@@ -277,7 +281,7 @@ class BannerAdmin(admin.ModelAdmin):
             )
         elif obj.media_type == 'youtube' and obj.video_url:
             return format_html(
-                '<span style="color:#666; font-size:0.8em;">ðŸŽ¬ YouTube Video</span>'
+                '<span style="color:#666; font-size:0.8em;">Ã°Å¸Å½Â¬ YouTube Video</span>'
             )
         return "No Media"
 
@@ -328,7 +332,7 @@ class FlashSaleAdmin(admin.ModelAdmin):
 # TODAY'S DEAL ADMIN
 # ============================================================
 
-# admin.py â€“ Update TodayDealAdmin
+# admin.py Ã¢â‚¬â€œ Update TodayDealAdmin
 
 @admin.register(TodayDeal)
 class TodayDealAdmin(admin.ModelAdmin):
@@ -1340,3 +1344,77 @@ class PromallCategoryGIFAdmin(admin.ModelAdmin):
             'object-fit:contain; border-radius:6px;" />',
             obj.gif.url,
         )
+
+
+
+# ============================================================
+# PROMALLSHOP ADDITIONAL WEBSITE CONTENT ADMIN
+# ============================================================
+
+from .models import PromallAdditionalWebsiteContent
+
+
+class PromallAdditionalWebsiteContentForm(forms.ModelForm):
+    entity = forms.ModelChoiceField(
+        queryset=Entity.objects.all().order_by("name"),
+        required=True,
+        help_text="Choose the website that should receive this content.",
+    )
+
+    class Meta:
+        model = PromallAdditionalWebsiteContent
+        fields = (
+            "entity",
+            "heading",
+            "description",
+            "display_order",
+            "is_active",
+        )
+        widgets = {
+            "description": CKEditor5Widget(config_name="default"),
+        }
+
+
+@admin.register(PromallAdditionalWebsiteContent)
+class PromallAdditionalWebsiteContentAdmin(admin.ModelAdmin):
+    form = PromallAdditionalWebsiteContentForm
+    list_display = (
+        "heading", "entity", "is_active", "display_order", "updated_at",
+    )
+    list_filter = ("entity", "is_active")
+    search_fields = ("heading", "description", "entity__name")
+    list_editable = ("is_active", "display_order")
+    ordering = ("display_order", "id")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Website and Content", {
+            "fields": ("entity", "heading", "description")
+        }),
+        ("Display Settings", {
+            "fields": ("display_order", "is_active")
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
+
+
+@admin.register(PromallWebsiteFAQ)
+class PromallWebsiteFAQAdmin(admin.ModelAdmin):
+    list_display = ("question", "entity", "is_active", "display_order")
+    list_filter = ("entity", "is_active")
+    search_fields = ("question", "answer", "entity__name")
+    list_editable = ("is_active", "display_order")
+    ordering = ("display_order", "id")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Website FAQ", {
+            "fields": ("entity", "question", "answer")
+        }),
+        ("Display Settings", {
+            "fields": ("display_order", "is_active")
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )

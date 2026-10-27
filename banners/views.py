@@ -45,6 +45,8 @@ from .models import (
     PromallBanner,
     PromallEventType,
     PromallEvent,
+    PromallAdditionalWebsiteContent,
+    PromallWebsiteFAQ,
 )
 
 from .serializers import (
@@ -768,6 +770,24 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
     )
 
     # --------------------------------------------------------
+    # ENTITY-SPECIFIC ADDITIONAL WEBSITE CONTENT
+    # --------------------------------------------------------
+
+    additional_content = (
+        PromallAdditionalWebsiteContent.objects.filter(
+            entity=entity,
+            is_active=True,
+        )
+        .prefetch_related("bullet_points")
+        .order_by("display_order", "id")
+    )
+
+    website_faqs = PromallWebsiteFAQ.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).order_by("display_order", "id")
+
+    # --------------------------------------------------------
     # RESPONSE
     # --------------------------------------------------------
 
@@ -811,6 +831,36 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
             "categories": [
                 serialize_promall_category(request, item)
                 for item in categories
+            ],
+
+            "additional_website_content": [
+                {
+                    "id": section.id,
+                    "heading": section.heading,
+                    "description": section.description,
+                    "content_html": section.description,
+                    "has_bullet_points": section.has_bullet_points,
+                    "bullet_points": (
+                        [
+                            point.text
+                            for point in section.bullet_points.all()
+                        ]
+                        if section.has_bullet_points
+                        else []
+                    ),
+                    "display_order": section.display_order,
+                }
+                for section in additional_content
+            ],
+
+            "website_faqs": [
+                {
+                    "id": faq.id,
+                    "question": faq.question,
+                    "answer": faq.answer,
+                    "display_order": faq.display_order,
+                }
+                for faq in website_faqs
             ],
 
             "today_deals": [

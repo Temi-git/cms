@@ -291,6 +291,31 @@
             </div>
         </div>
 
+        {% for app in app_list %}
+            {% for model in app.models %}
+                {% if model.object_name == "PromallAdditionalWebsiteContent" or model.object_name == "PromallWebsiteFAQ" %}
+                    <div class="admin-model-card">
+                        <div class="admin-model-card__header">
+                            <h3>
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                                {% else %}
+                                    {{ model.name }}
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="admin-model-card__actions">
+                            {% if model.add_url %}
+                                <a href="{{ model.add_url }}" class="add-link">+ Add</a>
+                            {% endif %}
+                            {% if model.admin_url %}
+                                <a href="{{ model.admin_url }}" class="manage-link">Manage</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
         </div>
     </div>
 

@@ -26,12 +26,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'banners',                    # ← right before admin, not at the very top
+    'banners',
+    'django_ckeditor_5',                    # ← right before admin, not at the very top
     'django.contrib.admin',
 
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+   
 ]
 
 REST_FRAMEWORK = {
@@ -143,3 +145,24 @@ CSRF_TRUSTED_ORIGINS = [
 # This is the base URL for images served from the Promall API, e.g.:
 #   PROMALL_EXTERNAL_MEDIA_BASE_URL=https://protrackapi.casdnet.com
 PROMALL_EXTERNAL_MEDIA_BASE_URL = os.environ.get('PROMALL_EXTERNAL_MEDIA_BASE_URL', '')
+
+
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', '|',
+            'bulletedList', 'numberedList', '|',
+            'link', 'blockQuote', '|',
+            'undo', 'redo',
+        ],
+        'heading': {
+            'options': [
+                {'model': 'paragraph', 'title': 'Paragraph', 'class': 'ck-heading_paragraph'},
+                {'model': 'heading2', 'view': 'h2', 'title': 'Heading 2', 'class': 'ck-heading_heading2'},
+                {'model': 'heading3', 'view': 'h3', 'title': 'Heading 3', 'class': 'ck-heading_heading3'},
+            ],
+        },
+    },
+}

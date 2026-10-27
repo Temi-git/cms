@@ -4,6 +4,7 @@ from banners.promall_live_taxonomy_admin import live_categories_admin, live_subc
 """
 URL configuration for banner_project.
 """
+from django.urls import include, path
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -11,6 +12,7 @@ from django.conf.urls.static import static
 from banners.promall_live_admin import live_products_admin, edit_live_product
 
 urlpatterns = [
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     path(
         'admin/promall-live/subcategories/<int:subcategory_id>/edit/',
         admin.site.admin_view(edit_live_subcategory),

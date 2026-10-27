@@ -1903,3 +1903,90 @@ class PromallCategoryGIF(models.Model):
 
     def __str__(self):
         return f"{self.category_name} (ID {self.category_id})"
+
+
+
+# ============================================================
+# PROMALLSHOP ADDITIONAL WEBSITE CONTENT
+# ============================================================
+
+class PromallAdditionalWebsiteContent(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        related_name="promall_additional_website_content",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="Website/entity that owns this content section.",
+    )
+    heading = models.CharField(
+        max_length=300,
+        help_text="Heading displayed above this content section.",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Paragraph displayed below the heading.",
+    )
+    has_bullet_points = models.BooleanField(
+        default=False,
+        help_text="Enable if this section contains bullet points.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first.",
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+        verbose_name = "Promall Additional Website Content"
+        verbose_name_plural = "Promall Additional Website Content"
+
+    def __str__(self):
+        return self.heading
+
+
+class PromallAdditionalWebsiteContentBulletPoint(models.Model):
+    content = models.ForeignKey(
+        PromallAdditionalWebsiteContent,
+        related_name="bullet_points",
+        on_delete=models.CASCADE,
+    )
+    text = models.CharField(max_length=500)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+        verbose_name = "Bullet Point"
+        verbose_name_plural = "Bullet Points"
+
+    def __str__(self):
+        return self.text
+
+
+# ============================================================
+# PROMALLSHOP WEBSITE FAQ (separate from product/category FAQs)
+# ============================================================
+
+class PromallWebsiteFAQ(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        related_name="promall_website_faqs",
+        on_delete=models.CASCADE,
+    )
+    question = models.CharField(max_length=500)
+    answer = models.TextField()
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+        verbose_name = "Promall Website FAQ"
+        verbose_name_plural = "Promall Website FAQs"
+
+    def __str__(self):
+        return self.question
