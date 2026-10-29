@@ -33,7 +33,9 @@ from .models import (
     PromallBanner,
     PromallEventType,
     PromallEvent,
-    PromallAdditionalWebsiteContent,
+    PromallSection1,
+    PromallSection2,
+    PromallSubsection,
     PromallWebsiteFAQ,
 )
 
@@ -1348,54 +1350,44 @@ class PromallCategoryGIFAdmin(admin.ModelAdmin):
 
 
 # ============================================================
-# PROMALLSHOP ADDITIONAL WEBSITE CONTENT ADMIN
+# PROMALLSHOP SECTION 1 AND SECTION 2 ADMIN
 # ============================================================
 
-from .models import PromallAdditionalWebsiteContent
-
-
-class PromallAdditionalWebsiteContentForm(forms.ModelForm):
-    entity = forms.ModelChoiceField(
-        queryset=Entity.objects.all().order_by("name"),
-        required=True,
-        help_text="Choose the website that should receive this content.",
-    )
-
-    class Meta:
-        model = PromallAdditionalWebsiteContent
-        fields = (
-            "entity",
-            "heading",
-            "description",
-            "display_order",
-            "is_active",
-        )
-        widgets = {
-            "description": CKEditor5Widget(config_name="default"),
-        }
-
-
-@admin.register(PromallAdditionalWebsiteContent)
-class PromallAdditionalWebsiteContentAdmin(admin.ModelAdmin):
-    form = PromallAdditionalWebsiteContentForm
-    list_display = (
-        "heading", "entity", "is_active", "display_order", "updated_at",
-    )
-    list_filter = ("entity", "is_active")
-    search_fields = ("heading", "description", "entity__name")
-    list_editable = ("is_active", "display_order")
+class PromallSubsectionInline(admin.StackedInline):
+    model = PromallSubsection
+    extra = 1
+    fields = ("title", "description", "display_order")
     ordering = ("display_order", "id")
+
+
+@admin.register(PromallSection1)
+class PromallSection1Admin(admin.ModelAdmin):
+    list_display = ("title", "entity", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("title", "subtitle", "description", "entity__name")
     readonly_fields = ("created_at", "updated_at")
     fieldsets = (
         ("Website and Content", {
-            "fields": ("entity", "heading", "description")
+            "fields": ("entity", "title", "subtitle", "description", "link")
         }),
-        ("Display Settings", {
-            "fields": ("display_order", "is_active")
+        ("Display Settings", {"fields": ("is_active",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(PromallSection2)
+class PromallSection2Admin(admin.ModelAdmin):
+    list_display = ("title", "entity", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("title", "subtitle", "description", "entity__name")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = (PromallSubsectionInline,)
+    fieldsets = (
+        ("Website and Content", {
+            "fields": ("entity", "title", "subtitle", "description")
         }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at")
-        }),
+        ("Display Settings", {"fields": ("is_active",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
 
 

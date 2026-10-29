@@ -1,4 +1,4 @@
-from .promall_category_gif_storage import PromallCategoryGIFStorage
+﻿from .promall_category_gif_storage import PromallCategoryGIFStorage
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -457,7 +457,7 @@ class AffiliateBanner(PublishableMixin):
     )
     image = models.ImageField(
         upload_to="affiliate_banners/",
-        help_text="Upload the banner image.",
+        help_text="top banner 1496 x 78.39 , program banner 1280x120",
     )
     placement = models.CharField(
         max_length=30,
@@ -596,7 +596,7 @@ class UpcomingEvent(PublishableMixin):
 class EventMedia(models.Model):
     """
     Gallery item (image or video) belonging to a single UpcomingEvent.
-    One UpcomingEvent â†’ many EventMedia records.
+    One UpcomingEvent Ã¢â€ â€™ many EventMedia records.
     Follows the same pattern as CaseStudyImage.
     """
 
@@ -771,14 +771,14 @@ class CybersecuritySolution(PublishableMixin):
 
     image = models.ImageField(
         upload_to="cybersecurity_solutions/",
-        help_text="MAIN PRODUCT IMAGE â€” the large image shown in the solution card/slide.",
+        help_text='MAIN PRODUCT IMAGE ??? the large image shown in the solution card/slide.',
     )
 
     product_logo = models.ImageField(
         upload_to="cybersecurity_solutions/logos/",
         blank=True,
         null=True,
-        help_text="PRODUCT/VENDOR LOGO â€” the small logo displayed below the product description (e.g., V-Key logo). Different from the main image above.",
+        help_text='PRODUCT/VENDOR LOGO ??? the small logo displayed below the product description (e.g., V-Key logo). Different from the main image above.',
         verbose_name="Product/Vendor Logo",
     )
 
@@ -1088,7 +1088,7 @@ class TeamCertificate(PublishableMixin):
 class CaseStudy(PublishableMixin):
     """
     A fully dynamic Case Study managed entirely from Django Admin.
-    Solution, industry, and country are plain text fields on the model â€”
+    Solution, industry, and country are plain text fields on the model Ã¢â‚¬â€
     no separate lookup tables required.  Filter options are derived
     dynamically from active records at query time.
     """
@@ -1102,7 +1102,7 @@ class CaseStudy(PublishableMixin):
 
     title = models.CharField(
         max_length=250,
-        help_text="Case study title (e.g., 'Access Bank Videowall â€” Ikota Branch').",
+        help_text="Case study title (e.g., 'Access Bank Videowall ??? Ikota Branch').",
     )
 
     slug = models.SlugField(
@@ -1144,7 +1144,7 @@ class CaseStudy(PublishableMixin):
         help_text="Main hero image for the case study.",
     )
 
-    # â”€â”€ Full case-study content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # Ã¢â€â‚¬Ã¢â€â‚¬ Full case-study content Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     client_overview = models.TextField(
         blank=True,
         help_text="Background information about the client.",
@@ -1166,7 +1166,7 @@ class CaseStudy(PublishableMixin):
         help_text="How the solution was implemented.",
     )
 
-    # â”€â”€ Publishing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # Ã¢â€â‚¬Ã¢â€â‚¬ Publishing Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     display_order = models.PositiveIntegerField(
         default=0,
         help_text="Lower numbers appear first in the listing.",
@@ -1184,7 +1184,7 @@ class CaseStudy(PublishableMixin):
         ]
 
     def __str__(self):
-        return f"{self.title} â€” {self.client}"
+        return f"{self.title} Ã¢â‚¬â€ {self.client}"
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1243,7 +1243,7 @@ class CaseStudyImage(models.Model):
 class CaseStudyTechnology(models.Model):
     """
     A single technology item used in a Case Study.
-    One CaseStudy â†’ many CaseStudyTechnology records.
+    One CaseStudy Ã¢â€ â€™ many CaseStudyTechnology records.
     """
 
     case_study = models.ForeignKey(
@@ -1271,7 +1271,7 @@ class CaseStudyTechnology(models.Model):
         verbose_name_plural = "Technologies Used"
 
     def __str__(self):
-        return f"{self.name} â€” {self.case_study.title}"
+        return f"{self.name} Ã¢â‚¬â€ {self.case_study.title}"
 
 
 # ============================================================
@@ -1281,7 +1281,7 @@ class CaseStudyTechnology(models.Model):
 class CaseStudyResultROI(models.Model):
     """
     A single Result & ROI item for a Case Study.
-    One CaseStudy â†’ many CaseStudyResultROI records.
+    One CaseStudy Ã¢â€ â€™ many CaseStudyResultROI records.
     """
 
     case_study = models.ForeignKey(
@@ -1392,7 +1392,7 @@ class PromallCategory(models.Model):
     slug = models.SlugField(
         max_length=300,
         db_index=True,
-        help_text='URL-friendly identifier. Not globally unique â€” the same slug may appear in multiple categories.',
+        help_text='URL-friendly identifier. Not globally unique ??? the same slug may appear in multiple categories.',
     )
 
     description = models.TextField(
@@ -1660,7 +1660,7 @@ class PromallProduct(models.Model):
 
     external_image_paths = models.TextField(
         blank=True,
-        help_text='Comma-separated relative image paths received from the Promall API. Read-only â€” never edit manually.',
+        help_text='Comma-separated relative image paths received from the Promall API. Read-only ??? never edit manually.',
     )
 
     is_hot = models.BooleanField(
@@ -1798,7 +1798,7 @@ class PromallBanner(models.Model):
     )
     image = models.ImageField(
         upload_to="promall/banners/",
-        help_text="Main banner image.",
+        help_text="Main banner image. 863x442",
     )
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -1861,6 +1861,7 @@ class PromallEvent(models.Model):
         upload_to="promall/events/",
         null=True,
         blank=True,
+        help_text="Recommended size: 800 x 500 px (8:5 ratio). Upload an event or promotion image in JPEG, PNG, or WebP format.",
     )
     registration_link = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -1891,7 +1892,11 @@ class PromallCategoryGIF(models.Model):
         help_text="Category ID from the live Promall API.",
     )
     category_name = models.CharField(max_length=255)
-    gif = models.FileField(upload_to=promall_category_gif_upload_path, storage=PromallCategoryGIFStorage())
+    gif = models.FileField(
+        upload_to=promall_category_gif_upload_path,
+        storage=PromallCategoryGIFStorage(),
+        help_text="Upload an optimized animated GIF for the PromallShop category display. Recommended size: 600 x 600 px (square).",
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1907,63 +1912,31 @@ class PromallCategoryGIF(models.Model):
 
 
 # ============================================================
-# PROMALLSHOP ADDITIONAL WEBSITE CONTENT
+# PROMALLSHOP SECTION 1
+# One section per website entity
 # ============================================================
 
-class PromallAdditionalWebsiteContent(models.Model):
-    entity = models.ForeignKey(
+class PromallSection1(models.Model):
+    entity = models.OneToOneField(
         Entity,
-        related_name="promall_additional_website_content",
+        related_name="promall_section1",
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        help_text="Website/entity that owns this content section.",
+        help_text="Website that owns Section 1.",
     )
-    heading = models.CharField(
-        max_length=300,
-        help_text="Heading displayed above this content section.",
-    )
-    description = models.TextField(
-        blank=True,
-        help_text="Paragraph displayed below the heading.",
-    )
-    has_bullet_points = models.BooleanField(
-        default=False,
-        help_text="Enable if this section contains bullet points.",
-    )
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Lower numbers appear first.",
-    )
+    title = models.CharField(max_length=300)
+    subtitle = models.CharField(max_length=500, blank=True)
+    description = models.TextField(blank=True)
+    link = models.URLField(blank=True, help_text="Optional destination URL for Section 1.")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["display_order", "id"]
-        verbose_name = "Promall Additional Website Content"
-        verbose_name_plural = "Promall Additional Website Content"
+        verbose_name = "Promall Section 1"
+        verbose_name_plural = "Promall Section 1"
 
     def __str__(self):
-        return self.heading
-
-
-class PromallAdditionalWebsiteContentBulletPoint(models.Model):
-    content = models.ForeignKey(
-        PromallAdditionalWebsiteContent,
-        related_name="bullet_points",
-        on_delete=models.CASCADE,
-    )
-    text = models.CharField(max_length=500)
-    display_order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ["display_order", "id"]
-        verbose_name = "Bullet Point"
-        verbose_name_plural = "Bullet Points"
-
-    def __str__(self):
-        return self.text
+        return f"{self.entity.name} - Section 1"
 
 
 # ============================================================
@@ -1990,3 +1963,64 @@ class PromallWebsiteFAQ(models.Model):
 
     def __str__(self):
         return self.question
+
+
+
+# ============================================================
+# PROMALLSHOP SECTION 1
+# One section per website entity
+# ============================================================
+
+class PromallSection2(models.Model):
+    entity = models.OneToOneField(
+        Entity,
+        related_name="promall_section2",
+        on_delete=models.CASCADE,
+        help_text="Website that owns Section 2.",
+    )
+    title = models.CharField(max_length=300)
+    subtitle = models.CharField(max_length=500, blank=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Promall Section 2"
+        verbose_name_plural = "Promall Section 2"
+
+    def __str__(self):
+        return f"{self.entity.name} - Section 2"
+
+
+# ============================================================
+# PROMALLSHOP SECTION 2 SUBSECTIONS
+# Multiple subsections per Section 2
+# ============================================================
+
+class PromallSubsection(models.Model):
+    section = models.ForeignKey(
+        PromallSection2,
+        related_name="subsections",
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField(max_length=300)
+    description = models.TextField(
+        help_text="Enter the full subsection content. Long descriptions are supported.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+        verbose_name = "Promall Subsection"
+        verbose_name_plural = "Promall Subsections"
+
+    def __str__(self):
+        return self.title
+
+

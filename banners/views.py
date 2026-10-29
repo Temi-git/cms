@@ -45,7 +45,9 @@ from .models import (
     PromallBanner,
     PromallEventType,
     PromallEvent,
-    PromallAdditionalWebsiteContent,
+    PromallSection1,
+    PromallSection2,
+    PromallSubsection,
     PromallWebsiteFAQ,
 )
 
@@ -770,17 +772,18 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
     )
 
     # --------------------------------------------------------
-    # ENTITY-SPECIFIC ADDITIONAL WEBSITE CONTENT
+    # ENTITY-SPECIFIC PROMALLSHOP SECTIONS
     # --------------------------------------------------------
 
-    additional_content = (
-        PromallAdditionalWebsiteContent.objects.filter(
-            entity=entity,
-            is_active=True,
-        )
-        .prefetch_related("bullet_points")
-        .order_by("display_order", "id")
-    )
+    section1 = PromallSection1.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).first()
+
+    section2 = PromallSection2.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).prefetch_related("subsections").first()
 
     website_faqs = PromallWebsiteFAQ.objects.filter(
         entity=entity,
@@ -833,25 +836,39 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
                 for item in categories
             ],
 
-            "additional_website_content": [
+            "promallsection1": (
                 {
-                    "id": section.id,
-                    "heading": section.heading,
-                    "description": section.description,
-                    "content_html": section.description,
-                    "has_bullet_points": section.has_bullet_points,
-                    "bullet_points": (
-                        [
-                            point.text
-                            for point in section.bullet_points.all()
-                        ]
-                        if section.has_bullet_points
-                        else []
-                    ),
-                    "display_order": section.display_order,
+                    "id": section1.id,
+                    "title": section1.title,
+                    "subtitle": section1.subtitle,
+                    "description": section1.description,
+                    "link": section1.link,
                 }
-                for section in additional_content
-            ],
+                if section1
+                else None
+            ),
+
+            "promallsection2": (
+                {
+                    "id": section2.id,
+                    "title": section2.title,
+                    "subtitle": section2.subtitle,
+                    "description": section2.description,
+                    "subsections": [
+                        {
+                            "id": subsection.id,
+                            "title": subsection.title,
+                            "description": subsection.description,
+                            "display_order": subsection.display_order,
+                        }
+                        for subsection in section2.subsections.all()
+                    ],
+                }
+                if section2
+                else None
+            ),
+
+            # Legacy API key retained temporarily for compatibility.
 
             "website_faqs": [
                 {
