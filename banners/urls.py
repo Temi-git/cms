@@ -12,13 +12,9 @@ from .views import (
     get_things_we_do_api,
     get_cybersecurity_solutions_api,
     get_projects_api,
-    get_blog_posts_api,
-    get_blog_post_detail_api,
     proxy_things_we_do_api,
     proxy_cybersecurity_solutions_api,
     proxy_projects_api,
-    proxy_blog_posts_api,
-    proxy_blog_detail_api,
     get_recognitions_api,
     get_team_certificates_api,
     proxy_recognitions_api,
@@ -173,33 +169,17 @@ urlpatterns = [
     # BLOG POSTS
     # ============================================================
 
-    path(
-        "proxy/blog-posts/<slug:slug>/",
-        proxy_blog_posts_api,
-        name="proxy-blog-posts",
-    ),
 
-    path(
-        "api/blog-posts/<slug:slug>/",
-        get_blog_posts_api,
-        name="api-blog-posts",
-    ),
 
     # ============================================================
     # BLOG POST DETAIL
     # ============================================================
 
-    path(
-        "proxy/blog-detail/<slug:slug>/",
-        proxy_blog_detail_api,
-        name="proxy-blog-detail",
-    ),
+    # path(
+    # ),
 
-    path(
-        "api/blog-detail/<slug:slug>/",
-        get_blog_post_detail_api,
-        name="blog-detail",
-    ),
+    # path(
+    # ),
 
     # ============================================================
     # RECOGNITIONS

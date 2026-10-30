@@ -86,9 +86,6 @@ class Entity(models.Model):
     def projects_count(self):
         return self.projects.count()
 
-    @property
-    def blog_posts_count(self):
-        return self.blog_posts.count()
 
     @property
     def recognition_count(self):
@@ -114,7 +111,6 @@ class Entity(models.Model):
             self.things_we_do_count +
             self.cybersecurity_solutions_count +
             self.projects_count +
-            self.blog_posts_count +
             self.recognition_count +
             self.team_certificate_count +
             self.case_study_count
@@ -282,7 +278,7 @@ class Banner(PublishableMixin):
     # --- Existing Image Field ---
     image = models.ImageField(
         upload_to="banners/",
-        help_text="Recommended size: 1920 x 650 px. Upload an image (if media type is 'Image').",
+        help_text="Recommended size: 1920 x 650 px. Upload an image (if media type is 'Image') max size 2mb.",
         blank=True,
         null=True,
     )
@@ -457,7 +453,7 @@ class AffiliateBanner(PublishableMixin):
     )
     image = models.ImageField(
         upload_to="affiliate_banners/",
-        help_text="top banner 1496 x 78.39 , program banner 1280x120",
+        help_text="Image dimensions (W × H)  Hero banner 1234 × 681 px  ,Top affiliate GIF 1145 × 60 px  ,Below-categories affiliate GIF 800 × 114 px, Flash side 1200 x 240 px, ",
     )
     placement = models.CharField(
         max_length=30,
@@ -713,7 +709,7 @@ class ThingWeDo(PublishableMixin):
         upload_to="things_we_do/",
         blank=True,
         null=True,
-        help_text="Optional image for this service.",
+        help_text="Optional image for this service.width=56px height=56px",
     )
 
     display_order = models.PositiveIntegerField(
@@ -771,14 +767,14 @@ class CybersecuritySolution(PublishableMixin):
 
     image = models.ImageField(
         upload_to="cybersecurity_solutions/",
-        help_text='MAIN PRODUCT IMAGE ??? the large image shown in the solution card/slide.',
+        help_text='MAIN PRODUCT IMAGE  the large image shown in the solution slide. size width=1244px, height=829px',
     )
 
     product_logo = models.ImageField(
         upload_to="cybersecurity_solutions/logos/",
         blank=True,
         null=True,
-        help_text='PRODUCT/VENDOR LOGO ??? the small logo displayed below the product description (e.g., V-Key logo). Different from the main image above.',
+        help_text='PRODUCT/VENDOR LOGO the small logo displayed below the product description (e.g., V-Key logo). size width=1244px, height=373px',
         verbose_name="Product/Vendor Logo",
     )
 
@@ -842,7 +838,7 @@ class Project(PublishableMixin):
 
     image = models.ImageField(
         upload_to="projects/",
-        help_text="Main project image.",
+        help_text="Main project image 604px X 377px",
     )
 
     project_url = models.URLField(
@@ -872,87 +868,6 @@ class Project(PublishableMixin):
 
 # ============================================================
 # BLOG POST
-# ============================================================
-
-class BlogPost(PublishableMixin):
-    """
-    Represents a blog post in the "Latest Insights" section.
-    """
-
-    entity = models.ForeignKey(
-        Entity,
-        related_name="blog_posts",
-        on_delete=models.CASCADE,
-        help_text="Entity this blog post belongs to.",
-    )
-
-    title = models.CharField(
-        max_length=250,
-        help_text="Blog post title.",
-    )
-
-    slug = models.SlugField(
-        max_length=250,
-        unique=True,
-        blank=True,
-        help_text="URL-friendly version of the blog title.",
-    )
-
-    image = models.ImageField(
-        upload_to="blog_posts/",
-        blank=True,
-        null=True,
-        help_text="Featured image for the blog post.",
-    )
-
-    excerpt = models.TextField(
-        blank=True,
-        help_text="Short preview text shown on the homepage.",
-    )
-
-    content = models.TextField(
-        help_text="Full blog post content.",
-    )
-
-    published_at = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Date and time the blog post was published.",
-    )
-
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Optional homepage display order.",
-    )
-
-    class Meta:
-        ordering = ["-published_at", "-created_at"]
-        verbose_name = "Blog Post"
-        verbose_name_plural = "Blog Posts"
-
-        indexes = [
-            models.Index(
-                fields=["entity", "is_active", "published_at"]
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.title} - {self.entity.name}"
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            from django.utils.text import slugify
-            self.slug = slugify(self.title)
-        super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        """Returns the URL for the blog detail page."""
-        from django.urls import reverse
-        return reverse('banners:blog-detail', kwargs={'slug': self.slug})
-
-
-# ============================================================
-# RECOGNITION (AWARDS & CERTIFICATES)
 # ============================================================
 
 class Recognition(PublishableMixin):
@@ -987,7 +902,7 @@ class Recognition(PublishableMixin):
         upload_to="recognitions/",
         blank=True,
         null=True,
-        help_text="Certificate, badge, or logo image.",
+        help_text="Certificate, badge, or logo image. size width=573.91 height=87.99 max=1mb",
     )
 
     year = models.CharField(
@@ -1052,7 +967,7 @@ class TeamCertificate(PublishableMixin):
         upload_to="team_certificates/",
         blank=True,
         null=True,
-        help_text="Certification logo or badge image.",
+        help_text="Certification logo or badge image",
     )
 
     year = models.CharField(
@@ -1141,10 +1056,9 @@ class CaseStudy(PublishableMixin):
         upload_to="case_studies/featured/",
         blank=True,
         null=True,
-        help_text="Main hero image for the case study.",
+        help_text="Main hero image for the case study. size width=1244px, height=698px",
     )
 
-    # Ã¢â€â‚¬Ã¢â€â‚¬ Full case-study content Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     client_overview = models.TextField(
         blank=True,
         help_text="Background information about the client.",
@@ -1197,22 +1111,40 @@ class CaseStudy(PublishableMixin):
 # CASE STUDY IMAGE
 # ============================================================
 
+def validate_case_study_video_size(file):
+    max_size = 30 * 1024 * 1024
+    if file.size > max_size:
+        raise ValidationError("Each case study video must be 30 MB or smaller.")
+
+
 class CaseStudyImage(models.Model):
     """
-    Additional gallery images for a single CaseStudy.
-    Deleting a CaseStudy cascades and removes all its images.
+    Gallery media for a single CaseStudy. Existing image entries remain supported.
     """
 
     case_study = models.ForeignKey(
         CaseStudy,
         related_name="images",
         on_delete=models.CASCADE,
-        help_text="The case study this image belongs to.",
+        help_text="The case study this media belongs to.",
     )
 
     image = models.ImageField(
         upload_to="case_studies/gallery/",
-        help_text="Gallery image for this case study.",
+        blank=True,
+        null=True,
+        help_text="Upload an image, or leave empty when uploading a video.",
+    )
+
+    video = models.FileField(
+        upload_to="case_studies/gallery/videos/",
+        blank=True,
+        null=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=["mp4", "webm", "mov"]),
+            validate_case_study_video_size,
+        ],
+        help_text="Optional video (MP4, WebM or MOV). Maximum size: 30 MB per video.",
     )
 
     caption = models.CharField(
@@ -1340,7 +1272,7 @@ class TechnologyPartner(models.Model):
 
     logo = models.ImageField(
         upload_to="partners/",
-        help_text="Partner/vendor logo image.",
+        help_text="Partner/vendor logo image. width=499.98px height=196px",
     )
 
     display_order = models.PositiveIntegerField(
@@ -1798,7 +1730,7 @@ class PromallBanner(models.Model):
     )
     image = models.ImageField(
         upload_to="promall/banners/",
-        help_text="Main banner image. 863x442",
+        help_text="Main banner image. 863x442px max 1mb",
     )
     display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)

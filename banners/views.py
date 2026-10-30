@@ -30,7 +30,6 @@ from .models import (
     ThingWeDo,
     CybersecuritySolution,
     Project,
-    BlogPost,
     Recognition,
     TeamCertificate,
     CaseStudy,
@@ -62,7 +61,6 @@ from .serializers import (
     serialize_thing_we_do,
     serialize_cybersecurity_solution,
     serialize_project,
-    serialize_blog_post,
     serialize_recognition,
     serialize_team_certificate,
     serialize_case_study_image,
@@ -931,22 +929,7 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
         entity.banners.all()
     ).order_by("display_order", "-created_at")
 
-    # --------------------------------------------------------
-    # FLASH SALES
-    # --------------------------------------------------------
 
-    flash_sales = entity.flash_sales.filter(
-        is_active=True,
-        end_datetime__gte=now,
-    ).order_by("display_order", "start_datetime", "-created_at")
-
-    # --------------------------------------------------------
-    # AFFILIATE BANNERS (publish-window filtered, existing behavior)
-    # --------------------------------------------------------
-
-    affiliate_banners = filter_publishable(
-        entity.affiliate_banners.all()
-    ).order_by("display_order", "-created_at")
 
     # --------------------------------------------------------
     # EVENTS (generic UpcomingEvent, filters on event_date)
@@ -962,13 +945,6 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
     if to_dt_end:
         events = events.filter(event_date__lte=to_dt_end)
 
-    # --------------------------------------------------------
-    # TODAY DEALS
-    # --------------------------------------------------------
-
-    today_deals = filter_scheduled(
-        entity.today_deals.all()
-    ).order_by("display_order", "-created_at")
 
     # --------------------------------------------------------
     # THINGS WE DO
@@ -993,14 +969,6 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
     projects = filter_publishable(
         entity.projects.all()
     ).order_by("display_order", "-created_at")
-
-    # --------------------------------------------------------
-    # BLOG POSTS
-    # --------------------------------------------------------
-
-    blog_posts = filter_publishable(
-        entity.blog_posts.all()
-    ).order_by("-published_at", "display_order")
 
     # --------------------------------------------------------
     # RECOGNITIONS
@@ -1051,25 +1019,13 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
                 for item in banners
             ],
 
-            "flash_sales": [
-                serialize_flash_sale(request, item)
-                for item in flash_sales
-            ],
 
-            "affiliate_banners": [
-                serialize_affiliate_banner(request, item)
-                for item in affiliate_banners
-            ],
 
             "upcoming_events": [
                 serialize_event(request, item)
                 for item in events
             ],
 
-            "today_deals": [
-                serialize_today_deal(request, item)
-                for item in today_deals
-            ],
 
             "things_we_do": [
                 serialize_thing_we_do(request, item)
@@ -1084,11 +1040,6 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
             "projects": [
                 serialize_project(request, item)
                 for item in projects
-            ],
-
-            "blog_posts": [
-                serialize_blog_post(request, item, full=False)
-                for item in blog_posts
             ],
 
             "recognitions": [
@@ -1330,74 +1281,6 @@ def get_projects_api(request, slug):
 
 @api_view(["GET", "OPTIONS"])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def get_blog_posts_api(request, slug):
-    """
-    GET /api/blog-posts/<slug>/
-    """
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-
-    try:
-        entity = Entity.objects.get(slug=slug, is_active=True)
-    except Entity.DoesNotExist:
-        return _cors_json_response(
-            {"status": "error", "message": f"Entity '{slug}' not found"},
-            status=404,
-        )
-
-    posts = filter_publishable(
-        entity.blog_posts.all()
-    ).order_by("-published_at", "display_order")
-
-    return _cors_json_response(
-        {
-            "status": "success",
-            "entity": entity.name,
-            "slug": entity.slug,
-            "blog_posts": [
-                serialize_blog_post(request, p, full=False) for p in posts
-            ],
-        },
-        status=200,
-    )
-
-
-# ============================================================
-# PROTECTED API — BLOG POST DETAIL
-# ============================================================
-
-@api_view(["GET", "OPTIONS"])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def get_blog_post_detail_api(request, slug):
-    """
-    GET /api/blog-detail/<slug>/
-    """
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-
-    try:
-        post = BlogPost.objects.get(slug=slug, is_active=True)
-    except BlogPost.DoesNotExist:
-        return _cors_json_response(
-            {"status": "error", "message": f"Blog post '{slug}' not found"},
-            status=404,
-        )
-
-    return _cors_json_response(
-        {
-            "status": "success",
-            "blog_post": serialize_blog_post(request, post, full=True),
-        },
-        status=200,
-    )
-
-
-# ============================================================
-# PUBLIC PROXY — THINGS WE DO
-# ============================================================
-
 @csrf_exempt
 def proxy_things_we_do_api(request, slug):
     """
@@ -1453,46 +1336,6 @@ def proxy_projects_api(request, slug):
 
 # ============================================================
 # PUBLIC PROXY — BLOG POSTS
-# ============================================================
-
-@csrf_exempt
-def proxy_blog_posts_api(request, slug):
-    """
-    GET /proxy/blog-posts/<slug>/
-    """
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-    if request.method != "GET":
-        return _cors_json_response(
-            {"status": "error", "message": "Method not allowed."},
-            status=405,
-        )
-    return _forward_request(f"/api/blog-posts/{slug}/", request)
-
-
-# ============================================================
-# PUBLIC PROXY — BLOG POST DETAIL
-# ============================================================
-
-@csrf_exempt
-def proxy_blog_detail_api(request, slug):
-    """
-    GET /proxy/blog-detail/<slug>/
-    """
-    if request.method == "OPTIONS":
-        return _cors_json_response({}, status=200)
-    if request.method != "GET":
-        return _cors_json_response(
-            {"status": "error", "message": "Method not allowed."},
-            status=405,
-        )
-    return _forward_request(f"/api/blog-detail/{slug}/", request)
-
-
-# ============================================================
-
-# ============================================================
-# PROTECTED API — RECOGNITIONS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])

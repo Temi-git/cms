@@ -197,58 +197,26 @@ def serialize_project(request, project):
         "description": project.description or "",
         "more_description": project.more_description or "",
         "image": build_media_url(request, project.image),
-        "project_url": project.project_url or "",
         "display_order": project.display_order,
     }
-
-
-def serialize_blog_post(request, post, full=False):
-    data = {
-        "id": post.id,
-        "title": post.title,
-        "slug": post.slug,
-        "image": build_media_url(request, post.image),
-        "excerpt": post.excerpt,
-        "published_at": (
-            post.published_at.isoformat()
-            if post.published_at
-            else None
-        ),
-        "created_at": (
-            post.created_at.isoformat()
-            if post.created_at
-            else None
-        ),
-        "url": f"/proxy/blog-detail/{post.slug}/",
-    }
-    if full:
-        data["content"] = post.content
-    return data
-
 
 def serialize_recognition(request, obj):
     return {
         "id": obj.id,
         "title": obj.title or "",
-        "issuing_organization": obj.issuing_organization or "",
         "description": obj.description or "",
         "image": build_media_url(request, obj.image),
-        "year": obj.year or "",
         "display_order": obj.display_order,
     }
-
 
 def serialize_team_certificate(request, obj):
     return {
         "id": obj.id,
         "title": obj.title or "",
-        "issuing_organization": obj.issuing_organization or "",
+        "subtitle": obj.issuing_organization or "",
         "description": obj.description or "",
-        "image": build_media_url(request, obj.image),
-        "year": obj.year or "",
         "display_order": obj.display_order,
     }
-
 
 # ============================================================
 # CASE STUDY SERIALIZERS
@@ -261,9 +229,16 @@ def _slugify_value(value):
 
 
 def serialize_case_study_image(request, img):
+    is_video = bool(img.video)
+    media_file = img.video if is_video else img.image
+    media_url = build_media_url(request, media_file) if media_file else None
+
     return {
         "id": img.id,
-        "image": build_media_url(request, img.image),
+        "image": build_media_url(request, img.image) if img.image else None,
+        "video": build_media_url(request, img.video) if img.video else None,
+        "media_url": media_url,
+        "media_type": "video" if is_video else "image",
         "caption": img.caption or "",
         "display_order": img.display_order,
     }
@@ -287,6 +262,10 @@ def serialize_case_study_list(request, cs):
         "short_description": cs.short_description or "",
         "featured_image": build_media_url(request, cs.featured_image),
         "display_order": cs.display_order,
+        "images": [
+            serialize_case_study_image(request, img)
+            for img in cs.images.order_by("display_order", "created_at")
+        ],
         "technologies": [
             {
                 "id": tech.id,

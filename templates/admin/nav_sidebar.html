@@ -1,0 +1,83 @@
+{% load i18n %}
+<button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
+<nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
+  <input type="search" id="nav-filter"
+         placeholder="Start typing to filterâ€¦"
+         aria-label="{% translate 'Filter navigation items' %}">
+
+  {% with proxynet_names="Banner,CaseStudy,CybersecuritySolution,Entity,Project,Recognition,TeamCertificate,TechnologyPartner,ThingWeDo,UpcomingEvent" promall_names="AffiliateBanner,FlashSale,TodayDeal,PromallBanner,PromallCategoryGIF,PromallEventType,PromallEvent,PromallSection1,PromallSection2,PromallWebsiteFAQ" system_names="Token,TokenProxy,Group,User" %}
+    {% for app in available_apps %}
+      {% for model in app.models %}
+        {% if model.object_name in proxynet_names %}
+          {% if forloop.first %}{% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+
+    <div class="module">
+      <table>
+        <caption><span class="section">PROXYNET GROUP</span></caption>
+        {% for app in available_apps %}
+          {% for model in app.models %}
+            {% if model.object_name == "Banner" or model.object_name == "CaseStudy" or model.object_name == "CybersecuritySolution" or model.object_name == "Entity" or model.object_name == "Project" or model.object_name == "Recognition" or model.object_name == "TeamCertificate" or model.object_name == "TechnologyPartner" or model.object_name == "ThingWeDo" or model.object_name == "UpcomingEvent" %}
+              <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+                <th scope="row" id="{{ app.app_label }}-{{ model.object_name|lower }}">
+                  {% if model.admin_url %}<a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                </th>
+                <td>{% if model.add_url %}<a href="{{ model.add_url }}" class="addlink" aria-describedby="{{ app.app_label }}-{{ model.object_name|lower }}">{% translate 'Add' %}</a>{% endif %}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="module">
+      <table>
+        <caption><span class="section">PROMALLSHOP</span></caption>
+        <tr class="model-live-promall-products">
+          <th scope="row"><a href="{% url 'promall_live_products' %}">Live Product</a></th>
+          <td></td>
+        </tr>
+        <tr class="model-live-promall-subcategories">
+          <th scope="row"><a href="{% url 'promall_live_subcategories' %}">Live Subcategory</a></th>
+          <td></td>
+        </tr>
+        <tr class="model-live-promall-categories">
+          <th scope="row"><a href="{% url 'promall_live_categories' %}">Live Category</a></th>
+          <td></td>
+        </tr>
+        {% for app in available_apps %}
+          {% for model in app.models %}
+            {% if model.object_name == "AffiliateBanner" or model.object_name == "FlashSale" or model.object_name == "TodayDeal" or model.object_name == "PromallBanner" or model.object_name == "PromallCategoryGIF" or model.object_name == "PromallEventType" or model.object_name == "PromallEvent" or model.object_name == "PromallSection1" or model.object_name == "PromallSection2" or model.object_name == "PromallWebsiteFAQ" %}
+              <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+                <th scope="row" id="{{ app.app_label }}-{{ model.object_name|lower }}">
+                  {% if model.admin_url %}<a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                </th>
+                <td>{% if model.add_url %}<a href="{{ model.add_url }}" class="addlink" aria-describedby="{{ app.app_label }}-{{ model.object_name|lower }}">{% translate 'Add' %}</a>{% endif %}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="module">
+      <table>
+        <caption><span class="section">SYSTEM &amp; ACCESS</span></caption>
+        {% for app in available_apps %}
+          {% for model in app.models %}
+            {% if model.object_name == "Token" or model.object_name == "TokenProxy" or model.object_name == "Group" or model.object_name == "User" %}
+              <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
+                <th scope="row" id="{{ app.app_label }}-{{ model.object_name|lower }}">
+                  {% if model.admin_url %}<a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                </th>
+                <td>{% if model.add_url %}<a href="{{ model.add_url }}" class="addlink" aria-describedby="{{ app.app_label }}-{{ model.object_name|lower }}">{% translate 'Add' %}</a>{% endif %}</td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </table>
+    </div>
+  {% endwith %}
+</nav>
