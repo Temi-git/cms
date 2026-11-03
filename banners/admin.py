@@ -69,8 +69,10 @@ from .models import (
     PromallSection1,
 
     PromallSection2,
+    PromallSection3,
 
     PromallSubsection,
+    PromallSubsection3,
 
     PromallWebsiteFAQ,
 
@@ -2558,6 +2560,34 @@ class PromallSection2Admin(admin.ModelAdmin):
 
 
 
+
+class PromallSubsection3Inline(admin.StackedInline):
+    model = PromallSubsection3
+    extra = 1
+    fields = ("title", "description", "display_order")
+    ordering = ("display_order", "id")
+
+
+@admin.register(PromallSection3)
+class PromallSection3Admin(admin.ModelAdmin):
+    list_display = ("title", "entity", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("title", "subtitle", "entity__name")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = (PromallSubsection3Inline,)
+
+    fieldsets = (
+        ("Website and Content", {
+            "fields": ("entity", "title", "subtitle")
+        }),
+        ("Display Settings", {
+            "fields": ("is_active",)
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
+
 @admin.register(PromallWebsiteFAQ)
 
 class PromallWebsiteFAQAdmin(admin.ModelAdmin):
@@ -2639,5 +2669,6 @@ class CasdnetBannerAdmin(admin.ModelAdmin):
                 obj.image.url,
             )
         return "No image"
+
 
 

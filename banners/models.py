@@ -1958,6 +1958,63 @@ class PromallSubsection(models.Model):
 
 
 # ============================================================
+
+# ============================================================
+# PROMALLSHOP SECTION 3
+# One section per website entity
+# ============================================================
+
+class PromallSection3(models.Model):
+    entity = models.OneToOneField(
+        Entity,
+        related_name="promall_section3",
+        on_delete=models.CASCADE,
+        help_text="Website that owns Section 3.",
+    )
+    title = models.CharField(max_length=300)
+    subtitle = models.CharField(max_length=500, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Promall Section 3"
+        verbose_name_plural = "Promall Section 3"
+
+    def __str__(self):
+        return f"{self.entity.name} - Section 3"
+
+
+# ============================================================
+# PROMALLSHOP SECTION 3 SUBSECTIONS
+# Multiple subsections per Section 3
+# ============================================================
+
+class PromallSubsection3(models.Model):
+    section = models.ForeignKey(
+        PromallSection3,
+        related_name="subsections",
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField(max_length=300)
+    description = models.TextField(
+        help_text="Enter the full subsection content. Long descriptions are supported.",
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
+        verbose_name = "Promall Subsection 3"
+        verbose_name_plural = "Promall Subsections 3"
+
+    def __str__(self):
+        return self.title
+
 # CASDNET WEBSITE CATEGORIES
 # ============================================================
 
@@ -1998,6 +2055,7 @@ class CasdnetBanner(models.Model):
 
     def __str__(self):
         return self.title
+
 
 
 

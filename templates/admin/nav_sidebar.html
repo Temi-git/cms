@@ -5,7 +5,7 @@
          placeholder="Start typing to filter"
          aria-label="{% translate 'Filter navigation items' %}">
 
-  {% with proxynet_names="Banner,CaseStudy,CybersecuritySolution,Entity,Project,Recognition,TeamCertificate,TechnologyPartner,ThingWeDo,UpcomingEvent" promall_names="AffiliateBanner,FlashSale,TodayDeal,PromallBanner,PromallCategoryGIF,PromallEventType,PromallEvent,PromallSection1,PromallSection2,PromallWebsiteFAQ" system_names="Token,TokenProxy,Group,User" %}
+  {% with proxynet_names="Banner,CaseStudy,CybersecuritySolution,Entity,Project,Recognition,TeamCertificate,TechnologyPartner,ThingWeDo,UpcomingEvent" promall_names="AffiliateBanner,FlashSale,TodayDeal,PromallBanner,PromallCategoryGIF,PromallEventType,PromallEvent,PromallSection1,PromallSection2,PromallSection3,PromallWebsiteFAQ" system_names="Token,TokenProxy,Group,User" %}
     {% for app in available_apps %}
       {% for model in app.models %}
         {% if model.object_name in proxynet_names %}
@@ -49,7 +49,7 @@
         </tr>
         {% for app in available_apps %}
           {% for model in app.models %}
-            {% if model.object_name == "AffiliateBanner" or model.object_name == "FlashSale" or model.object_name == "TodayDeal" or model.object_name == "PromallBanner" or model.object_name == "PromallCategoryGIF" or model.object_name == "PromallEventType" or model.object_name == "PromallEvent" or model.object_name == "PromallSection1" or model.object_name == "PromallSection2" or model.object_name == "PromallWebsiteFAQ" %}
+            {% if model.object_name == "AffiliateBanner" or model.object_name == "FlashSale" or model.object_name == "TodayDeal" or model.object_name == "PromallBanner" or model.object_name == "PromallCategoryGIF" or model.object_name == "PromallEventType" or model.object_name == "PromallEvent" or model.object_name == "PromallSection1" or model.object_name == "PromallSection2" or model.object_name == "PromallSection3" or model.object_name == "PromallWebsiteFAQ" %}
               <tr class="model-{{ model.object_name|lower }}{% if model.admin_url in request.path|urlencode %} current-model{% endif %}">
                 <th scope="row" id="{{ app.app_label }}-{{ model.object_name|lower }}">
                   {% if model.admin_url %}<a href="{{ model.admin_url }}"{% if model.admin_url in request.path|urlencode %} aria-current="page"{% endif %}>{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
@@ -106,6 +106,7 @@
     </div>
   {% endwith %}
 </nav>
+
 
 
 

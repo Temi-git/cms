@@ -1,4 +1,4 @@
-import os
+﻿import os
 from datetime import datetime
 
 import requests
@@ -46,7 +46,9 @@ from .models import (
     PromallEvent,
     PromallSection1,
     PromallSection2,
+    PromallSection3,
     PromallSubsection,
+    PromallSubsection3,
     PromallWebsiteFAQ,
     CasdnetBanner,
     CasdnetCategory,
@@ -586,10 +588,10 @@ def get_combined_api(request, slug):
 
     Returns the complete homepage payload, branched by entity slug.
 
-    * slug == 'promallshop'   → Promallshop-specific models
+    * slug == 'promallshop'   â†’ Promallshop-specific models
                                 (PromallBanner, PromallEvent, PromallEventType,
                                  PromallCategory, AffiliateBanner with is_active-only filter)
-    * any other slug          → generic CMS models
+    * any other slug          â†’ generic CMS models
                                 (Banner, UpcomingEvent, existing serializers)
 
     The public proxy at /proxy/combined/<slug>/ forwards here unchanged.
@@ -666,7 +668,7 @@ def get_combined_api(request, slug):
 
 
 # ============================================================
-# COMBINED API — PROMALLSHOP BRANCH
+# COMBINED API â€” PROMALLSHOP BRANCH
 # ============================================================
 
 def _combined_promallshop(request, entity, from_dt, to_dt_end):
@@ -677,7 +679,7 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
     Events:          PromallEvent   (uses event_datetime, not event_date)
     Event types:     PromallEventType
     Categories:      PromallCategory (filtered to this entity, is_active=True)
-    Affiliate banners: AffiliateBanner filtered by is_active=True only —
+    Affiliate banners: AffiliateBanner filtered by is_active=True only â€”
                        no publish_start/publish_end window, because Promallshop
                        uses simple on/off control for these banners.
     Flash sales, today deals, etc.: filtered to this entity as usual.
@@ -699,7 +701,7 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
     )
 
     # --------------------------------------------------------
-    # AFFILIATE BANNERS — is_active only (no publish window)
+    # AFFILIATE BANNERS â€” is_active only (no publish window)
     # The publish_start/publish_end on AffiliateBanner records for
     # Promallshop represent scheduled launch dates set by admins; using
     # filter_publishable() here would incorrectly hide banners whose
@@ -787,6 +789,10 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
         entity=entity,
         is_active=True,
     ).prefetch_related("subsections").first()
+    section3 = PromallSection3.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).prefetch_related("subsections").first()
 
     website_faqs = PromallWebsiteFAQ.objects.filter(
         entity=entity,
@@ -870,6 +876,24 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
                 if section2
                 else None
             ),
+            "promallsection3": (
+                {
+                    "id": section3.id,
+                    "title": section3.title,
+                    "subtitle": section3.subtitle,
+                    "subsections": [
+                        {
+                            "id": subsection.id,
+                            "title": subsection.title,
+                            "description": subsection.description,
+                            "display_order": subsection.display_order,
+                        }
+                        for subsection in section3.subsections.all()
+                    ],
+                }
+                if section3
+                else None
+            ),
 
             # Legacy API key retained temporarily for compatibility.
 
@@ -907,7 +931,7 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
 
 
 # ============================================================
-# COMBINED API — GENERIC / PROXYNETGROUP BRANCH
+# COMBINED API â€” GENERIC / PROXYNETGROUP BRANCH
 # ============================================================
 
 
@@ -1052,7 +1076,7 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
     ).order_by("display_order", "id")
 
     # --------------------------------------------------------
-    # RESPONSE — preserves all existing keys exactly
+    # RESPONSE â€” preserves all existing keys exactly
     # --------------------------------------------------------
 
     return _cors_json_response(
@@ -1207,7 +1231,7 @@ def get_entities_api(request):
 # ============================================================
 
 # ============================================================
-# PROTECTED API — THINGS WE DO
+# PROTECTED API â€” THINGS WE DO
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1246,7 +1270,7 @@ def get_things_we_do_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — CYBERSECURITY SOLUTIONS
+# PROTECTED API â€” CYBERSECURITY SOLUTIONS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1285,7 +1309,7 @@ def get_cybersecurity_solutions_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — PROJECTS
+# PROTECTED API â€” PROJECTS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1324,7 +1348,7 @@ def get_projects_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — BLOG POSTS (list)
+# PROTECTED API â€” BLOG POSTS (list)
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1345,7 +1369,7 @@ def proxy_things_we_do_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — CYBERSECURITY SOLUTIONS
+# PUBLIC PROXY â€” CYBERSECURITY SOLUTIONS
 # ============================================================
 
 @csrf_exempt
@@ -1364,7 +1388,7 @@ def proxy_cybersecurity_solutions_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — PROJECTS
+# PUBLIC PROXY â€” PROJECTS
 # ============================================================
 
 @csrf_exempt
@@ -1383,7 +1407,7 @@ def proxy_projects_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — BLOG POSTS
+# PUBLIC PROXY â€” BLOG POSTS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1422,7 +1446,7 @@ def get_recognitions_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — TEAM CERTIFICATES
+# PROTECTED API â€” TEAM CERTIFICATES
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1461,7 +1485,7 @@ def get_team_certificates_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — RECOGNITIONS
+# PUBLIC PROXY â€” RECOGNITIONS
 # ============================================================
 
 @csrf_exempt
@@ -1480,7 +1504,7 @@ def proxy_recognitions_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — TEAM CERTIFICATES
+# PUBLIC PROXY â€” TEAM CERTIFICATES
 # ============================================================
 
 @csrf_exempt
@@ -1499,7 +1523,7 @@ def proxy_team_certificates_api(request, slug):
 
 
 # ============================================================
-# CASE STUDY — HELPERS
+# CASE STUDY â€” HELPERS
 
 # ============================================================
 
@@ -1509,7 +1533,7 @@ def _active_case_studies():
 
 
 # ============================================================
-# PROTECTED API — CASE STUDIES LISTING + FILTERING
+# PROTECTED API â€” CASE STUDIES LISTING + FILTERING
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1535,7 +1559,7 @@ def get_case_studies_api(request):
     industry_filter = request.GET.get("industry", "").strip()
     country_filter  = request.GET.get("country",  "").strip()
 
-    # Filter by slugified match — compare incoming slug against
+    # Filter by slugified match â€” compare incoming slug against
     # the slugified version of each stored value.
     filtered = []
     for cs in qs:
@@ -1560,7 +1584,7 @@ def get_case_studies_api(request):
 
 
 # ============================================================
-# PROTECTED API — DYNAMIC FILTER OPTIONS
+# PROTECTED API â€” DYNAMIC FILTER OPTIONS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1603,7 +1627,7 @@ def get_case_study_filters_api(request):
 
 
 # ============================================================
-# PROTECTED API — CASE STUDY DETAIL
+# PROTECTED API â€” CASE STUDY DETAIL
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1634,7 +1658,7 @@ def get_case_study_detail_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — CASE STUDIES LISTING + FILTERING
+# PUBLIC PROXY â€” CASE STUDIES LISTING + FILTERING
 # ============================================================
 
 @csrf_exempt
@@ -1654,7 +1678,7 @@ def proxy_case_studies_api(request):
 
 
 # ============================================================
-# PUBLIC PROXY — DYNAMIC FILTER OPTIONS
+# PUBLIC PROXY â€” DYNAMIC FILTER OPTIONS
 # ============================================================
 
 @csrf_exempt
@@ -1673,7 +1697,7 @@ def proxy_case_study_filters_api(request):
 
 
 # ============================================================
-# PUBLIC PROXY — CASE STUDY DETAIL
+# PUBLIC PROXY â€” CASE STUDY DETAIL
 # ============================================================
 
 @csrf_exempt
@@ -1692,7 +1716,7 @@ def proxy_case_study_detail_api(request, slug):
 
 
 # ============================================================
-# PROTECTED API — EVENT DETAIL (with gallery)
+# PROTECTED API â€” EVENT DETAIL (with gallery)
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1726,7 +1750,7 @@ def get_event_detail_api(request, event_id):
 
 
 # ============================================================
-# PUBLIC PROXY — EVENT DETAIL
+# PUBLIC PROXY â€” EVENT DETAIL
 # ============================================================
 
 @csrf_exempt
@@ -1747,7 +1771,7 @@ def proxy_event_detail_api(request, event_id):
 # ============================================================
 
 # ============================================================
-# PROTECTED API — TECHNOLOGY PARTNERS
+# PROTECTED API â€” TECHNOLOGY PARTNERS
 # ============================================================
 
 @api_view(["GET", "OPTIONS"])
@@ -1781,7 +1805,7 @@ def get_partners_api(request, slug):
 
 
 # ============================================================
-# PUBLIC PROXY — TECHNOLOGY PARTNERS
+# PUBLIC PROXY â€” TECHNOLOGY PARTNERS
 # ============================================================
 
 @csrf_exempt
@@ -1973,7 +1997,7 @@ def proxy_promall_banners_api(request):
     return _forward_request("/api/promall/banners/", request)
 
 
-# PROMALLSHOP CATALOG — PROTECTED API VIEWS
+# PROMALLSHOP CATALOG â€” PROTECTED API VIEWS
 # ============================================================
 
 
@@ -2223,7 +2247,7 @@ def get_promall_featured_api(request, slug):
 
 
 # ============================================================
-# PROMALLSHOP CATALOG — PUBLIC PROXY VIEWS
+# PROMALLSHOP CATALOG â€” PUBLIC PROXY VIEWS
 # ============================================================
 
 
@@ -2366,3 +2390,4 @@ def get_promall_category_gifs_public(request):
         "success": True,
         "data": data,
     })
+
