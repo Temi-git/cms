@@ -2570,7 +2570,11 @@ class PromallSubsection3Inline(admin.StackedInline):
 
 @admin.register(PromallSection3)
 class PromallSection3Admin(admin.ModelAdmin):
-    list_display = ("title", "entity", "is_active", "updated_at")
+    list_display = ("title", "entity", "subsection_count", "is_active", "updated_at")
+
+    @admin.display(description="Subsections")
+    def subsection_count(self, obj):
+        return obj.subsections.count()
     list_filter = ("is_active",)
     search_fields = ("title", "subtitle", "entity__name")
     readonly_fields = ("created_at", "updated_at")
@@ -2669,6 +2673,4 @@ class CasdnetBannerAdmin(admin.ModelAdmin):
                 obj.image.url,
             )
         return "No image"
-
-
 
