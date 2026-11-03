@@ -1,8 +1,8 @@
-{% load i18n %}
+﻿{% load i18n %}
 <button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
   <input type="search" id="nav-filter"
-         placeholder="Start typing to filterâ€¦"
+         placeholder="Start typing to filter"
          aria-label="{% translate 'Filter navigation items' %}">
 
   {% with proxynet_names="Banner,CaseStudy,CybersecuritySolution,Entity,Project,Recognition,TeamCertificate,TechnologyPartner,ThingWeDo,UpcomingEvent" promall_names="AffiliateBanner,FlashSale,TodayDeal,PromallBanner,PromallCategoryGIF,PromallEventType,PromallEvent,PromallSection1,PromallSection2,PromallWebsiteFAQ" system_names="Token,TokenProxy,Group,User" %}
@@ -64,7 +64,32 @@
 
     <div class="module">
       <table>
-        <caption><span class="section">SYSTEM &amp; ACCESS</span></caption>
+        <caption><span class="section">TECHNITES</span></caption>
+        <tr class="model-technites-pricing">
+          <th scope="row">
+            <a href="{% url 'promall_technites_pricing' %}">Technites Pricing</a>
+          </th>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="module">
+      <table>
+        <caption><span class="section">CASDNET</span></caption>
+        <tr class="model-casdnetcategory">
+          <th scope="row"><a href="{% url 'admin:banners_casdnetcategory_changelist' %}">CASDNET Categories</a></th>
+          <td><a href="{% url 'admin:banners_casdnetcategory_add' %}" class="addlink">Add</a></td>
+        </tr>
+        <tr class="model-casdnetbanner">
+          <th scope="row"><a href="{% url 'admin:banners_casdnetbanner_changelist' %}">CASDNET Banners</a></th>
+          <td><a href="{% url 'admin:banners_casdnetbanner_add' %}" class="addlink">Add</a></td>
+        </tr>
+                </table>
+      </div>
+
+      <div class="module">
+        <table><caption><span class="section">SYSTEM &amp; ACCESS</span></caption>
         {% for app in available_apps %}
           {% for model in app.models %}
             {% if model.object_name == "Token" or model.object_name == "TokenProxy" or model.object_name == "Group" or model.object_name == "User" %}
@@ -81,3 +106,6 @@
     </div>
   {% endwith %}
 </nav>
+
+
+

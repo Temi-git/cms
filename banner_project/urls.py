@@ -1,3 +1,4 @@
+﻿from banners.promall_technites_admin import technites_pricing_admin, edit_technites_pricing
 from banners.promall_live_taxonomy_admin import edit_live_subcategory
 from banners.promall_live_taxonomy_admin import edit_live_category
 from banners.promall_live_taxonomy_admin import live_categories_admin, live_subcategories_admin
@@ -12,6 +13,16 @@ from django.conf.urls.static import static
 from banners.promall_live_admin import live_products_admin, edit_live_product
 
 urlpatterns = [
+    path(
+        'admin/technites/pricing/<str:product>/<str:tier>/edit/',
+        admin.site.admin_view(edit_technites_pricing),
+        name='promall_technites_edit',
+    ),
+    path(
+        'admin/technites/pricing/',
+        admin.site.admin_view(technites_pricing_admin),
+        name='promall_technites_pricing',
+    ),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     path(
         'admin/promall-live/subcategories/<int:subcategory_id>/edit/',

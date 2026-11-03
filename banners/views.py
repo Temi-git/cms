@@ -48,6 +48,8 @@ from .models import (
     PromallSection2,
     PromallSubsection,
     PromallWebsiteFAQ,
+    CasdnetBanner,
+    CasdnetCategory,
 )
 
 from .serializers import (
@@ -657,6 +659,9 @@ def get_combined_api(request, slug):
     # GENERIC / PROXYNETGROUP BRANCH
     # ====================================================
 
+    if slug == "casdnet":
+        return _combined_casdnet(request, entity)
+
     return _combined_generic(request, entity, from_dt, to_dt_end)
 
 
@@ -904,6 +909,49 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
 # ============================================================
 # COMBINED API — GENERIC / PROXYNETGROUP BRANCH
 # ============================================================
+
+
+def _combined_casdnet(request, entity):
+    """
+    Return CASDNET banners and categories for the selected Entity.
+    """
+
+    banners = CasdnetBanner.objects.filter(entity=entity).order_by("id")
+    categories = CasdnetCategory.objects.filter(entity=entity).order_by("id")
+
+    def get_image_url(item):
+        if item.image:
+            return f"https://manager.promallshop.com{item.image.url}"
+        return None
+
+    return _cors_json_response(
+        {
+            "status": "success",
+            "entity": entity.name,
+            "slug": entity.slug,
+            "url": entity.url,
+            "banners": [
+                {
+                    "id": item.id,
+                    "title": item.title,
+                    "subtitle": item.subtitle,
+                    "link": item.link,
+                    "image": get_image_url(item),
+                }
+                for item in banners
+            ],
+            "categories": [
+                {
+                    "id": item.id,
+                    "title": item.title,
+                    "link": item.link,
+                    "image": get_image_url(item),
+                }
+                for item in categories
+            ],
+        },
+        status=200,
+    )
 
 def _combined_generic(request, entity, from_dt, to_dt_end):
     """

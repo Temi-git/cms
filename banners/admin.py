@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 
 from django import forms
 
@@ -441,7 +441,7 @@ class BannerAdmin(admin.ModelAdmin):
 
     # filter_horizontal renders a dual-listbox in the admin:
 
-    #   Available Entities  Ã¢â€ â€™  Chosen Entities
+    #   Available Entities  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  Chosen Entities
 
     # The admin can tick Proxynet Group, Promallshop, or both.
 
@@ -465,7 +465,7 @@ class BannerAdmin(admin.ModelAdmin):
 
                 'link',
 
-                'entity',        # Ã¢â€ Â replaces the old 'entity' FK field
+                'entity',        # ÃƒÂ¢Ã¢â‚¬Â Ã‚Â replaces the old 'entity' FK field
 
                 'media_type',
 
@@ -553,7 +553,7 @@ class BannerAdmin(admin.ModelAdmin):
 
             return format_html(
 
-                '<span style="color:#666; font-size:0.8em;">Ã°Å¸Å½Â¬ YouTube Video</span>'
+                '<span style="color:#666; font-size:0.8em;">‚Â¬ YouTube Video</span>'
 
             )
 
@@ -655,7 +655,7 @@ class FlashSaleAdmin(admin.ModelAdmin):
 
 
 
-# admin.py Ã¢â‚¬â€œ Update TodayDealAdmin
+# admin.py ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Update TodayDealAdmin
 
 
 
@@ -2595,3 +2595,49 @@ class PromallWebsiteFAQAdmin(admin.ModelAdmin):
         }),
 
     )
+
+# ============================================================
+# CASDNET ADMIN
+# ============================================================
+
+from .models import CasdnetCategory, CasdnetBanner
+from django.utils.html import format_html as casdnet_format_html
+
+
+@admin.register(CasdnetCategory)
+class CasdnetCategoryAdmin(admin.ModelAdmin):
+    list_display = ("entity", "title", "link", "image_preview", "created_at")
+    search_fields = ("title", "link")
+    readonly_fields = ("image_preview", "created_at", "updated_at")
+    fields = ("entity", "title", "image", "image_preview", "link", "created_at", "updated_at")
+
+    @admin.display(description="Image")
+    def image_preview(self, obj):
+        if obj and obj.image:
+            return casdnet_format_html(
+                '<img src="{}" style="max-height:65px;max-width:110px;object-fit:contain;" />',
+                obj.image.url,
+            )
+        return "No image"
+
+
+@admin.register(CasdnetBanner)
+class CasdnetBannerAdmin(admin.ModelAdmin):
+    list_display = ("entity", "title", "subtitle", "link", "image_preview", "created_at")
+    search_fields = ("title", "subtitle", "link")
+    readonly_fields = ("image_preview", "created_at", "updated_at")
+    fields = (
+        "entity", "title", "subtitle", "link", "image",
+        "image_preview", "created_at", "updated_at",
+    )
+
+    @admin.display(description="Image")
+    def image_preview(self, obj):
+        if obj and obj.image:
+            return casdnet_format_html(
+                '<img src="{}" style="max-height:65px;max-width:110px;object-fit:contain;" />',
+                obj.image.url,
+            )
+        return "No image"
+
+

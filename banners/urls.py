@@ -411,3 +411,11 @@ urlpatterns += [
         name="proxy-promall-category-gifs",
     ),
 ]
+
+# CASDNET PUBLIC WEBSITE API
+from .casdnet_api import casdnet_categories_api, casdnet_banners_api
+
+urlpatterns += [
+    path("api/casdnet/categories/", casdnet_categories_api, name="api-casdnet-categories"),
+    path("api/casdnet/banners/", casdnet_banners_api, name="api-casdnet-banners"),
+]

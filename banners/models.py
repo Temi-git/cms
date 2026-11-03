@@ -1956,3 +1956,49 @@ class PromallSubsection(models.Model):
         return self.title
 
 
+
+# ============================================================
+# CASDNET WEBSITE CATEGORIES
+# ============================================================
+
+class CasdnetCategory(models.Model):
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE, related_name="casdnet_categories")
+    title = models.CharField(max_length=300)
+    image = models.ImageField(upload_to="casdnet/categories/")
+    link = models.URLField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "CASDNET Category"
+        verbose_name_plural = "CASDNET Categories"
+
+    def __str__(self):
+        return self.title
+
+
+# ============================================================
+# CASDNET WEBSITE BANNERS
+# ============================================================
+
+class CasdnetBanner(models.Model):
+    entity = models.ForeignKey("Entity", on_delete=models.CASCADE, related_name="casdnet_banners")
+    title = models.CharField(max_length=300)
+    subtitle = models.CharField(max_length=500, blank=True)
+    link = models.URLField(max_length=1000)
+    image = models.ImageField(upload_to="casdnet/banners/")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "CASDNET Banner"
+        verbose_name_plural = "CASDNET Banners"
+
+    def __str__(self):
+        return self.title
+
+
+
+
