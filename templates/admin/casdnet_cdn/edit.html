@@ -1,0 +1,190 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+.cdn-editor{max-width:1150px}
+.cdn-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.cdn-header p,.cdn-hint,.cdn-note{color:var(--body-quiet-color)}
+.cdn-card{background:var(--body-bg);border:1px solid var(--border-color);border-radius:9px;margin-bottom:20px;overflow:hidden}
+.cdn-card-header{padding:17px 20px;border-bottom:1px solid var(--hairline-color)}
+.cdn-card-header h2{font-size:17px;margin:0 0 5px}
+.cdn-card-header p{font-size:12px;color:var(--body-quiet-color);margin:0}
+.cdn-card-body{padding:20px}
+.cdn-field{margin-bottom:22px}
+.cdn-field label{display:block;font-weight:600;margin-bottom:8px}
+.cdn-field input,.cdn-field textarea,.cdn-field select{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid var(--border-color);border-radius:6px;background:var(--body-bg);color:var(--body-fg);font:inherit}
+.cdn-field textarea{resize:vertical;line-height:1.6}
+.cdn-readonly{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.cdn-readonly-item{padding:12px;border:1px solid var(--hairline-color);border-radius:6px;min-width:0}
+.cdn-readonly-item small{display:block;color:var(--body-quiet-color);margin-bottom:5px}
+.cdn-readonly-item strong{overflow-wrap:anywhere}
+.cdn-actions{display:flex;justify-content:flex-end;gap:10px;padding:17px 20px;border-top:1px solid var(--hairline-color)}
+.cdn-back{display:inline-block;padding:9px 14px;border:1px solid var(--border-color);border-radius:6px;text-decoration:none}
+.cdn-hint{font-size:12px;margin-top:6px}
+.cdn-rte{border:1px solid var(--border-color);border-radius:7px;overflow:hidden;background:var(--body-bg)}
+.cdn-rte-toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--border-color);background:var(--darkened-bg)}
+.cdn-rte-toolbar button,.cdn-rte-toolbar select{min-height:34px;padding:5px 9px;border:1px solid var(--border-color);border-radius:4px;background:var(--body-bg);color:var(--body-fg);cursor:pointer}
+.cdn-rte-toolbar button:hover{background:var(--primary);color:white}
+.cdn-rte-toolbar select{width:auto}
+.cdn-rte-editable{min-height:220px;padding:15px;outline:none;line-height:1.65;overflow-wrap:anywhere}
+.cdn-rte-editable:focus{box-shadow:inset 0 0 0 2px var(--primary)}
+.cdn-rte-editable img{max-width:100%}
+.cdn-rte-source-view{display:none;width:100%;min-height:220px;box-sizing:border-box;padding:15px;border:0;resize:vertical;background:var(--body-bg);color:var(--body-fg);font-family:monospace}
+.cdn-rte.is-source .cdn-rte-editable{display:none}
+.cdn-rte.is-source .cdn-rte-source-view{display:block}
+.cdn-note{font-size:12px;line-height:1.6}
+@media(max-width:650px){.cdn-readonly{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cdn-editor" id="content-main">
+  <div class="cdn-header">
+    <div>
+      <h1>{{ title }}</h1>
+      <p>{% if kind == "products" %}Edit product content and select its CDN category.{% else %}Manage the remote category information.{% endif %}</p>
+    </div>
+    <a class="cdn-back" href="{{ list_url }}">← Back to records</a>
+  </div>
+
+  <form method="post" id="cdn-edit-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <section class="cdn-card">
+      <div class="cdn-card-header">
+        <h2>{% if kind == "products" %}Product content{% else %}Category information{% endif %}</h2>
+        <p>{% if kind == "products" %}Choose a category and edit product descriptions using the visual HTML editor.{% else %}Edit the category fields below.{% endif %}</p>
+      </div>
+
+      <div class="cdn-card-body">
+        {% for field in form %}
+          <div class="cdn-field">
+            {{ field.label_tag }}
+
+            {% if kind == "products" and field.name == "description" or kind == "products" and field.name == "more_information" %}
+              <div class="cdn-rte" data-editor-for="{{ field.auto_id }}">
+                <div class="cdn-rte-toolbar">
+                  <button type="button" data-cmd="undo" title="Undo">↶</button>
+                  <button type="button" data-cmd="redo" title="Redo">↷</button>
+                  <select data-format title="Formatting">
+                    <option value="P">Paragraph</option>
+                    <option value="H1">Heading 1</option>
+                    <option value="H2">Heading 2</option>
+                    <option value="H3">Heading 3</option>
+                    <option value="H4">Heading 4</option>
+                    <option value="BLOCKQUOTE">Quote</option>
+                    <option value="PRE">Preformatted</option>
+                  </select>
+                  <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                  <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                  <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
+                  <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+                  <button type="button" data-link title="Insert link">🔗 Link</button>
+                  <button type="button" data-cmd="removeFormat" title="Clear formatting">I<sup>x</sup></button>
+                  <button type="button" data-source title="HTML source">&lt; &gt;</button>
+                </div>
+                <div class="cdn-rte-editable" contenteditable="true"></div>
+                <textarea class="cdn-rte-source-view" spellcheck="false"></textarea>
+              </div>
+              <div style="display:none">{{ field }}</div>
+              <div class="cdn-hint">Use the toolbar for visual editing or switch to HTML source mode.</div>
+            {% else %}
+              {{ field }}
+            {% endif %}
+
+            {% if field.errors %}
+              <div class="cdn-hint" style="color:var(--error-fg)">{{ field.errors }}</div>
+            {% endif %}
+            {% if kind == "products" and field.name == "short_description" %}
+              <div class="cdn-hint">Short product summary.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="cdn-actions">
+        <a href="{{ list_url }}" class="cdn-back">Cancel</a>
+        <button type="submit" class="default">Save changes</button>
+      </div>
+    </section>
+  </form>
+
+  {% if kind == "products" %}
+    <section class="cdn-card">
+      <div class="cdn-card-header">
+        <h2>Read-only product details</h2>
+        <p>These fields are displayed for reference and cannot be edited here.</p>
+      </div>
+      <div class="cdn-card-body">
+        <div class="cdn-readonly">
+          {% for key, value in record.items %}
+            {% if key != "name" and key != "description" and key != "short_description" and key != "more_information" and key != "category_id" %}
+              <div class="cdn-readonly-item">
+                <small>{{ key|title }}</small>
+                <strong>{{ value|default:"—" }}</strong>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("cdn-edit-form");
+  if (!form) return;
+
+  document.querySelectorAll(".cdn-rte").forEach(function (wrapper) {
+    const fieldId = wrapper.dataset.editorFor;
+    const original = document.getElementById(fieldId);
+    const editable = wrapper.querySelector(".cdn-rte-editable");
+    const source = wrapper.querySelector(".cdn-rte-source-view");
+
+    if (!original || !editable || !source) return;
+
+    editable.innerHTML = original.value || "";
+    source.value = original.value || "";
+
+    wrapper.querySelectorAll("[data-cmd]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        editable.focus();
+        document.execCommand(button.dataset.cmd, false, null);
+      });
+    });
+
+    wrapper.querySelector("[data-format]").addEventListener("change", function () {
+      editable.focus();
+      document.execCommand("formatBlock", false, this.value);
+    });
+
+    wrapper.querySelector("[data-link]").addEventListener("click", function () {
+      const url = window.prompt("Enter the link URL:");
+      if (url) {
+        editable.focus();
+        document.execCommand("createLink", false, url);
+      }
+    });
+
+    wrapper.querySelector("[data-source]").addEventListener("click", function () {
+      if (wrapper.classList.contains("is-source")) {
+        editable.innerHTML = source.value;
+        wrapper.classList.remove("is-source");
+      } else {
+        source.value = editable.innerHTML;
+        wrapper.classList.add("is-source");
+      }
+    });
+
+    form.addEventListener("submit", function () {
+      original.value = wrapper.classList.contains("is-source")
+        ? source.value
+        : editable.innerHTML;
+    });
+  });
+})();
+</script>
+{% endblock %}

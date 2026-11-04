@@ -11,6 +11,12 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from banners.promall_live_admin import live_products_admin, edit_live_product
+from banners.casdnet_cdn_admin import (
+    cdn_products_admin,
+    cdn_categories_admin,
+    edit_cdn_product,
+    edit_cdn_category,
+)
 
 urlpatterns = [
     path(
@@ -50,6 +56,27 @@ urlpatterns = [
 
     path('admin/promall-live/products/<int:product_id>/edit/', admin.site.admin_view(edit_live_product), name='promall_live_edit_product'),
     path('admin/promall-live/products/', admin.site.admin_view(live_products_admin), name='promall_live_products'),
+    # CASDNET REMOTE CDN MANAGEMENT
+    path(
+        'admin/casdnet/cdn-products/',
+        admin.site.admin_view(cdn_products_admin),
+        name='casdnet_cdn_products',
+    ),
+    path(
+        'admin/casdnet/cdn-products/<str:product_id>/edit/',
+        admin.site.admin_view(edit_cdn_product),
+        name='casdnet_cdn_edit_product',
+    ),
+    path(
+        'admin/casdnet/cdn-categories/',
+        admin.site.admin_view(cdn_categories_admin),
+        name='casdnet_cdn_categories',
+    ),
+    path(
+        'admin/casdnet/cdn-categories/<str:category_id>/edit/',
+        admin.site.admin_view(edit_cdn_category),
+        name='casdnet_cdn_edit_category',
+    ),
     path('admin/', admin.site.urls),
     path('', include('banners.urls')),
 ]
@@ -58,3 +85,4 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

@@ -85,6 +85,18 @@
           <th scope="row"><a href="{% url 'admin:banners_casdnetbanner_changelist' %}">CASDNET Banners</a></th>
           <td><a href="{% url 'admin:banners_casdnetbanner_add' %}" class="addlink">Add</a></td>
         </tr>
+        <tr>
+          <th scope="row">
+            <a href="{% url 'casdnet_cdn_products' %}">CDN Products</a>
+          </th>
+          <td></td>
+        </tr>
+        <tr>
+          <th scope="row">
+            <a href="{% url 'casdnet_cdn_categories' %}">CDN Categories</a>
+          </th>
+          <td></td>
+        </tr>
                 </table>
       </div>
 
@@ -106,6 +118,7 @@
     </div>
   {% endwith %}
 </nav>
+
 
 
 

@@ -937,11 +937,17 @@ def _combined_promallshop(request, entity, from_dt, to_dt_end):
 
 def _combined_casdnet(request, entity):
     """
-    Return CASDNET banners and categories for the selected Entity.
+    Return CASDNET banners, categories and technology partners
+    for the selected Entity.
     """
 
     banners = CasdnetBanner.objects.filter(entity=entity).order_by("id")
     categories = CasdnetCategory.objects.filter(entity=entity).order_by("id")
+
+    technology_partners = TechnologyPartner.objects.filter(
+        entity=entity,
+        is_active=True,
+    ).select_related("entity").order_by("display_order", "id")
 
     def get_image_url(item):
         if item.image:
@@ -972,6 +978,10 @@ def _combined_casdnet(request, entity):
                     "image": get_image_url(item),
                 }
                 for item in categories
+            ],
+            "partners": [
+                serialize_technology_partner(request, item)
+                for item in technology_partners
             ],
         },
         status=200,

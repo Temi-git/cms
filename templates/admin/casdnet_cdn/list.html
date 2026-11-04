@@ -1,0 +1,106 @@
+﻿{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+.cdn-wrap{max-width:1350px}
+.cdn-intro{margin:0 0 22px}
+.cdn-intro p{color:var(--body-quiet-color)}
+.cdn-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.cdn-search{display:flex;gap:8px;flex-wrap:wrap}
+.cdn-search input{min-width:270px;padding:10px;border:1px solid var(--border-color);border-radius:7px}
+.cdn-panel{background:var(--body-bg);border:1px solid var(--border-color);border-radius:10px;overflow:hidden}
+.cdn-table{width:100%;border-collapse:collapse}
+.cdn-table th{padding:14px;text-align:left;background:var(--darkened-bg);white-space:nowrap}
+.cdn-table td{padding:14px;border-top:1px solid var(--hairline-color);vertical-align:middle}
+.cdn-name{font-weight:600}
+.cdn-sub{font-size:12px;color:var(--body-quiet-color);margin-top:4px}
+.cdn-pill{display:inline-block;padding:4px 9px;border-radius:30px;background:var(--darkened-bg);font-size:12px}
+.cdn-action{display:inline-block;padding:8px 13px;border-radius:6px;background:var(--primary);color:white!important;text-decoration:none}
+.cdn-empty{text-align:center;padding:38px!important;color:var(--body-quiet-color)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cdn-wrap" id="content-main">
+  <div class="cdn-intro">
+    <h1>{{ title }}</h1>
+    <p>Remote CASDNET records for company 1. Changes are saved directly to the CDN API.</p>
+  </div>
+
+  {% if api_error %}
+    <p class="errornote">{{ api_error }}</p>
+  {% endif %}
+
+  <div class="cdn-toolbar">
+    <form method="get" class="cdn-search">
+      <input type="search" name="q" value="{{ query }}" placeholder="Search remote records">
+      <button class="button" type="submit">Search</button>
+      {% if query %}
+        {% if kind == "products" %}
+          <a class="button" href="{% url 'casdnet_cdn_products' %}">Clear</a>
+        {% else %}
+          <a class="button" href="{% url 'casdnet_cdn_categories' %}">Clear</a>
+        {% endif %}
+      {% endif %}
+    </form>
+    <span>{{ records|length }} record(s)</span>
+  </div>
+
+  <div class="cdn-panel">
+    <div style="overflow-x:auto">
+      <table class="cdn-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            {% if kind == "products" %}
+              <th>Model / SKU</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Status</th>
+            {% else %}
+              <th>Slug</th>
+              <th>Delivery</th>
+              <th>Active</th>
+            {% endif %}
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in records %}
+          <tr>
+            <td>{{ item.id|default:"—" }}</td>
+            <td>
+              <div class="cdn-name">{{ item.name|default:"Unnamed record" }}</div>
+              {% if kind == "products" %}
+                <div class="cdn-sub">{{ item.short_description|default:item.description|truncatechars:90 }}</div>
+              {% endif %}
+            </td>
+            {% if kind == "products" %}
+              <td>{{ item.model|default:item.sku|default:"—" }}</td>
+              <td>{{ item.price|default:"—" }}</td>
+              <td>{{ item.qty|default:"—" }}</td>
+              <td><span class="cdn-pill">{{ item.status|default:"—" }}</span></td>
+            {% else %}
+              <td>{{ item.slug|default:"—" }}</td>
+              <td>{{ item.delivery_type|default:"—" }}</td>
+              <td><span class="cdn-pill">{{ item.active|default:"—" }}</span></td>
+            {% endif %}
+            <td>
+              {% if kind == "products" %}
+                <a class="cdn-action" href="{% url 'casdnet_cdn_edit_product' item.id %}">Manage</a>
+              {% else %}
+                <a class="cdn-action" href="{% url 'casdnet_cdn_edit_category' item.id %}">Manage</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="cdn-empty">No remote records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

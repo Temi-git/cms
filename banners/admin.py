@@ -2564,31 +2564,61 @@ class PromallSection2Admin(admin.ModelAdmin):
 class PromallSubsection3Inline(admin.StackedInline):
     model = PromallSubsection3
     extra = 1
-    fields = ("title", "description", "display_order")
+    show_change_link = True
     ordering = ("display_order", "id")
+    classes = ("wide",)
+    verbose_name = "Section 3 Subsection"
+    verbose_name_plural = "Section 3 Subsections"
+
+    fieldsets = (
+        ("Subsection Content", {
+            "fields": ("title", "description"),
+            "description": "Add the subsection heading and its full content."
+        }),
+        ("Display Order", {
+            "fields": ("display_order",),
+            "description": "Lower numbers appear first on the website."
+        }),
+    )
 
 
 @admin.register(PromallSection3)
 class PromallSection3Admin(admin.ModelAdmin):
-    list_display = ("title", "entity", "subsection_count", "is_active", "updated_at")
-
-    @admin.display(description="Subsections")
-    def subsection_count(self, obj):
-        return obj.subsections.count()
-    list_filter = ("is_active",)
+    list_display = (
+        "title",
+        "entity",
+        "subsection_count",
+        "is_active",
+        "updated_at",
+    )
+    list_display_links = ("title",)
+    list_filter = ("is_active", "entity")
     search_fields = ("title", "subtitle", "entity__name")
     readonly_fields = ("created_at", "updated_at")
     inlines = (PromallSubsection3Inline,)
+    list_per_page = 25
+    ordering = ("-updated_at",)
+
+    @admin.display(description="Total Subsections")
+    def subsection_count(self, obj):
+        return obj.subsections.count()
 
     fieldsets = (
-        ("Website and Content", {
-            "fields": ("entity", "title", "subtitle")
+        ("Website Information", {
+            "fields": ("entity",),
+            "description": "Select the website that owns this section."
         }),
-        ("Display Settings", {
-            "fields": ("is_active",)
+        ("Section Content", {
+            "fields": ("title", "subtitle"),
+            "description": "Manage the main heading and subtitle displayed for Section 3."
         }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at")
+        ("Visibility Settings", {
+            "fields": ("is_active",),
+            "description": "Control whether Section 3 is displayed on the website."
+        }),
+        ("Record Information", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
         }),
     )
 
