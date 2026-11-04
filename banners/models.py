@@ -439,6 +439,7 @@ class AffiliateBanner(PublishableMixin):
         ("below_categories", "Below Categories"),
         ("flash_side", "Flash Side"),
         ("below_flash", "Below Flash"),
+        ("shop_top", "shop top"),
     ]
 
     entity = models.ForeignKey(
@@ -465,7 +466,7 @@ class AffiliateBanner(PublishableMixin):
     )
     affiliate_url = models.URLField(
         blank=True,
-        help_text="Required for Program placement only.",
+         help_text="Destination URL for Program and Below Categories placements.",
     )
     display_order = models.PositiveIntegerField(
         default=0,
@@ -497,15 +498,18 @@ class AffiliateBanner(PublishableMixin):
                     "placement": "Only one affiliate banner is allowed per entity for each placement."
                 })
 
-        if self.placement == "program" and not self.affiliate_url:
-            raise ValidationError(
-                {"affiliate_url": "A destination URL is required for Program placement."}
-            )
-
-        if self.placement != "program":
-            self.affiliate_url = ""
-    def __str__(self):
-        return f"{self.title} - {self.entity.name}"
+        if self.placement in ("program", "below_categories"):
+         if not self.affiliate_url:
+            raise ValidationError({
+                "affiliate_url": (
+                    "A destination URL is required for "
+                    "Program and Below Categories placements."
+                )
+            })
+        else:
+         self.affiliate_url = ""
+    
+    
 class UpcomingEvent(PublishableMixin):
 
     entity = models.ForeignKey(

@@ -1,4 +1,4 @@
-"""
+﻿"""
 banners/serializers.py
 
 All serializer functions for the banners app.
@@ -47,7 +47,7 @@ def serialize_affiliate_banner(request, banner):
         "display_order": banner.display_order,
     }
 
-    if banner.placement == "program":
+    if banner.placement in ("program", "below_categories"):
         data["affiliate_url"] = banner.affiliate_url or ""
 
     return data
@@ -245,7 +245,7 @@ def serialize_case_study_image(request, img):
 
 
 def serialize_case_study_list(request, cs):
-    """Lightweight serializer for listing cards â€” includes related items."""
+    """Lightweight serializer for listing cards Ã¢â‚¬â€ includes related items."""
     return {
         "id": cs.id,
         "title": cs.title or "",
