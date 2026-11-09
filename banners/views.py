@@ -941,8 +941,8 @@ def _combined_casdnet(request, entity):
     for the selected Entity.
     """
 
-    banners = CasdnetBanner.objects.filter(entity=entity).order_by("id")
-    categories = CasdnetCategory.objects.filter(entity=entity).order_by("id")
+    banners = CasdnetBanner.objects.filter(entity=entity).order_by("display_order", "id")
+    categories = CasdnetCategory.objects.filter(entity=entity).order_by("display_order", "id")
 
     technology_partners = TechnologyPartner.objects.filter(
         entity=entity,
@@ -963,6 +963,7 @@ def _combined_casdnet(request, entity):
             "banners": [
                 {
                     "id": item.id,
+                    "display_order": item.display_order,
                     "title": item.title,
                     "subtitle": item.subtitle,
                     "link": item.link,
@@ -973,6 +974,7 @@ def _combined_casdnet(request, entity):
             "categories": [
                 {
                     "id": item.id,
+                    "display_order": item.display_order,
                     "title": item.title,
                     "link": item.link,
                     "image": get_image_url(item),

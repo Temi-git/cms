@@ -17,13 +17,14 @@ def casdnet_categories_api(request):
     data = [
         {
             "id": item.id,
+            "display_order": item.display_order,
             "entity_id": item.entity_id,
             "entity": str(item.entity),
             "title": item.title,
             "image": _image_url(request, item.image),
             "link": item.link,
         }
-        for item in CasdnetCategory.objects.all()
+        for item in CasdnetCategory.objects.order_by("display_order", "id")
     ]
     return Response({"results": data})
 
@@ -34,6 +35,7 @@ def casdnet_banners_api(request):
     data = [
         {
             "id": item.id,
+            "display_order": item.display_order,
             "entity_id": item.entity_id,
             "entity": str(item.entity),
             "title": item.title,
@@ -41,7 +43,7 @@ def casdnet_banners_api(request):
             "link": item.link,
             "image": _image_url(request, item.image),
         }
-        for item in CasdnetBanner.objects.all()
+        for item in CasdnetBanner.objects.order_by("display_order", "id")
     ]
     return Response({"results": data})
 

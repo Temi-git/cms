@@ -2670,10 +2670,10 @@ from django.utils.html import format_html as casdnet_format_html
 
 @admin.register(CasdnetCategory)
 class CasdnetCategoryAdmin(admin.ModelAdmin):
-    list_display = ("entity", "title", "link", "image_preview", "created_at")
+    list_display = ("entity", "title", "display_order", "link", "image_preview", "created_at")
     search_fields = ("title", "link")
     readonly_fields = ("image_preview", "created_at", "updated_at")
-    fields = ("entity", "title", "image", "image_preview", "link", "created_at", "updated_at")
+    fields = ("entity", "title", "display_order", "image", "image_preview", "link", "created_at", "updated_at")
 
     @admin.display(description="Image")
     def image_preview(self, obj):
@@ -2687,11 +2687,11 @@ class CasdnetCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(CasdnetBanner)
 class CasdnetBannerAdmin(admin.ModelAdmin):
-    list_display = ("entity", "title", "subtitle", "link", "image_preview", "created_at")
+    list_display = ("entity", "title", "subtitle", "display_order", "link", "image_preview", "created_at")
     search_fields = ("title", "subtitle", "link")
     readonly_fields = ("image_preview", "created_at", "updated_at")
     fields = (
-        "entity", "title", "subtitle", "link", "image",
+        "entity", "title", "subtitle", "display_order", "link", "image",
         "image_preview", "created_at", "updated_at",
     )
 

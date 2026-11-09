@@ -2027,11 +2027,12 @@ class CasdnetCategory(models.Model):
     title = models.CharField(max_length=300)
     image = models.ImageField(upload_to="casdnet/categories/")
     link = models.URLField(max_length=1000)
+    display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["id"]
+        ordering = ["display_order", "id"]
         verbose_name = "CASDNET Category"
         verbose_name_plural = "CASDNET Categories"
 
@@ -2049,11 +2050,12 @@ class CasdnetBanner(models.Model):
     subtitle = models.CharField(max_length=500, blank=True)
     link = models.URLField(max_length=1000)
     image = models.ImageField(upload_to="casdnet/banners/")
+    display_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["id"]
+        ordering = ["display_order", "id"]
         verbose_name = "CASDNET Banner"
         verbose_name_plural = "CASDNET Banners"
 
