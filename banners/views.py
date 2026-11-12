@@ -22,6 +22,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .models import (
     Entity,
+    Brand,
     Banner,
     UpcomingEvent,
     FlashSale,
@@ -53,6 +54,8 @@ from .models import (
     CasdnetBanner,
     CasdnetCategory,
 )
+
+from .brands_api import serialize_brand_detail
 
 from .serializers import (
     serialize_banner,
@@ -1087,7 +1090,15 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
         is_active=True,
     ).order_by("display_order", "id")
 
-    # --------------------------------------------------------
+    
+    brands = (
+        Brand.objects
+        .filter(entity=entity)
+        .select_related("entity")
+        .prefetch_related("faqs")
+        .order_by("title", "id")
+    )
+# --------------------------------------------------------
     # RESPONSE â€” preserves all existing keys exactly
     # --------------------------------------------------------
 
@@ -1144,6 +1155,10 @@ def _combined_generic(request, entity, from_dt, to_dt_end):
             "partners": [
                 serialize_technology_partner(request, item)
                 for item in technology_partners
+            ],
+            "brands": [
+                serialize_brand_detail(request, brand)
+                for brand in brands
             ],
         },
         status=200,
@@ -2402,4 +2417,5 @@ def get_promall_category_gifs_public(request):
         "success": True,
         "data": data,
     })
+
 

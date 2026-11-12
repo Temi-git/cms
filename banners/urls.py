@@ -419,3 +419,23 @@ urlpatterns += [
     path("api/casdnet/categories/", casdnet_categories_api, name="api-casdnet-categories"),
     path("api/casdnet/banners/", casdnet_banners_api, name="api-casdnet-banners"),
 ]
+
+
+# ============================================================
+# BRAND API
+# ============================================================
+
+from .brands_api import get_brand_detail_api, proxy_brand_detail_api
+
+urlpatterns += [
+    path(
+        'api/promall/brands/<slug:slug>/',
+        get_brand_detail_api,
+        name='api-promall-brand-detail',
+    ),
+    path(
+        'proxy/promall/brands/<slug:slug>/',
+        proxy_brand_detail_api,
+        name='proxy-promall-brand-detail',
+    ),
+]

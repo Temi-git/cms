@@ -1,4 +1,4 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 
 from django import forms
 
@@ -75,6 +75,8 @@ from .models import (
     PromallSubsection3,
 
     PromallWebsiteFAQ,
+    Brand,
+    BrandFAQ,
 
 )
 
@@ -443,7 +445,7 @@ class BannerAdmin(admin.ModelAdmin):
 
     # filter_horizontal renders a dual-listbox in the admin:
 
-    #   Available Entities  ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢  Chosen Entities
+    #   Available Entities  ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢  Chosen Entities
 
     # The admin can tick Proxynet Group, Promallshop, or both.
 
@@ -467,7 +469,7 @@ class BannerAdmin(admin.ModelAdmin):
 
                 'link',
 
-                'entity',        # ÃƒÂ¢Ã¢â‚¬Â Ã‚Â replaces the old 'entity' FK field
+                'entity',        # ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â replaces the old 'entity' FK field
 
                 'media_type',
 
@@ -555,7 +557,7 @@ class BannerAdmin(admin.ModelAdmin):
 
             return format_html(
 
-                '<span style="color:#666; font-size:0.8em;">‚Â¬ YouTube Video</span>'
+                '<span style="color:#666; font-size:0.8em;">Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ YouTube Video</span>'
 
             )
 
@@ -657,7 +659,7 @@ class FlashSaleAdmin(admin.ModelAdmin):
 
 
 
-# admin.py ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ Update TodayDealAdmin
+# admin.py ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ Update TodayDealAdmin
 
 
 
@@ -2703,4 +2705,52 @@ class CasdnetBannerAdmin(admin.ModelAdmin):
                 obj.image.url,
             )
         return "No image"
+
+
+# ============================================================
+# BRAND MANAGEMENT ADMIN
+# ============================================================
+
+class BrandFAQInline(admin.TabularInline):
+    model = BrandFAQ
+    extra = 1
+    fields = ("question", "answer")
+
+
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ("title", "entity", "slug", "updated_at")
+    list_filter = ("entity",)
+    search_fields = ("title", "slug", "entity__name")
+
+    readonly_fields = ("image_preview", "created_at", "updated_at")
+    inlines = (BrandFAQInline,)
+    list_per_page = 25
+    ordering = ("title",)
+
+    fieldsets = (
+        ("Brand Information", {
+            "fields": ("entity", "title", "slug")
+        }),
+        ("Descriptions", {
+            "fields": ("short_description", "description")
+        }),
+        ("Brand Image", {
+            "fields": ("image", "image_preview"),
+            "description": "Maximum image upload size: 2 MB."
+        }),
+        ("Record Information", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+    @admin.display(description="Image Preview")
+    def image_preview(self, obj):
+        if obj and obj.image:
+            return format_html(
+                '<img src="{}" style="max-height:100px;max-width:180px;object-fit:contain;" />',
+                obj.image.url,
+            )
+        return "No image uploaded"
 
