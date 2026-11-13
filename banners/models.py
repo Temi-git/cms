@@ -2065,4 +2065,75 @@ class CasdnetBanner(models.Model):
 
 
 
+# ============================================================
+# BRAND MANAGEMENT
+# ============================================================
+
+def validate_brand_image_size(file):
+    max_size = 2 * 1024 * 1024  # 2 MB
+
+    if file.size > max_size:
+        raise ValidationError(
+            "Brand image must be 2 MB or smaller."
+        )
+
+
+class Brand(models.Model):
+    entity = models.ForeignKey(
+        Entity,
+        on_delete=models.CASCADE,
+        related_name="brands",
+    )
+
+    title = models.CharField(max_length=300)
+
+    short_description = models.TextField(
+        help_text="Enter a short description of the brand."
+    )
+
+    description = models.TextField(
+        help_text="Enter the full brand description."
+    )
+
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        help_text="Unique URL slug used to retrieve this brand.",
+    )
+
+    image = models.ImageField(
+        upload_to="brands/",
+        validators=[validate_brand_image_size],
+        help_text="Maximum upload size: 2 MB.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Brand"
+        verbose_name_plural = "Brands"
+
+    def __str__(self):
+        return self.title
+
+
+class BrandFAQ(models.Model):
+    brand = models.ForeignKey(
+        Brand,
+        on_delete=models.CASCADE,
+        related_name="faqs",
+    )
+
+    question = models.TextField()
+    answer = models.TextField()
+
+    class Meta:
+        verbose_name = "Brand FAQ"
+        verbose_name_plural = "Brand FAQs"
+
+    def __str__(self):
+        return f"{self.brand.title} - {self.question[:60]}"
+
 
